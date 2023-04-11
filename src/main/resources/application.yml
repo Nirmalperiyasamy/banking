@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/banking?createDatabaseIfNotExist=true
+    username: spring
+    password: 1234
+    driverClassName: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    properties.hibernate.dialect: org.hibernate.dialect.MySQL8Dialect
+    hibernate.ddl-auto: update
+
+
+server:
+  port: 7000
