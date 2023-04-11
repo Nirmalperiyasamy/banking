@@ -58,6 +58,7 @@
 				</configuration>
 			</plugin>
 		</plugins>
+		<finalName>bank-management-system</finalName>
 	</build>
 
 </project>
