@@ -18,6 +18,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final UserService userService;
 
+    private final String[] PERMITTED_ROUTES = {"/api/user/add-user", "/api/user/**", "/api/admin/**", "/api/manager/**"};
+
     @Bean
     public DaoAuthenticationProvider authProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -28,10 +30,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     protected void configure(HttpSecurity http) throws Exception {
         http.csrf().disable().authorizeRequests()
-                .antMatchers("/api/user/add-user").permitAll()
-                .antMatchers("/api/user/**").hasAuthority(Role.USER.name())
-                .antMatchers("/api/admin/**").hasAuthority(Role.ADMIN.name())
-                .antMatchers("/api/manager/**").hasAuthority(Role.MANAGER.name())
+                .antMatchers(PERMITTED_ROUTES[0]).permitAll()
+                .antMatchers(PERMITTED_ROUTES[1]).hasAuthority(Role.USER.name())
+                .antMatchers(PERMITTED_ROUTES[2]).hasAuthority(Role.ADMIN.name())
+                .antMatchers(PERMITTED_ROUTES[3]).hasAuthority(Role.MANAGER.name())
                 .anyRequest().authenticated()
                 .and()
                 .httpBasic();

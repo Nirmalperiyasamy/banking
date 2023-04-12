@@ -9,6 +9,13 @@ spring:
     properties.hibernate.dialect: org.hibernate.dialect.MySQL8Dialect
     hibernate.ddl-auto: update
 
+  servlet:
+    multipart:
+      enabled: true
+      file-size-threshold: 5MB
+      max-file-size: 5MB
+      max-request-size: 5MB
+
 
 server:
   port: 7000

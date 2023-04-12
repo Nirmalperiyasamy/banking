@@ -1,6 +1,7 @@
 package com.nirmal.banking.dao;
 
 import com.nirmal.banking.utils.Gender;
+import com.nirmal.banking.utils.ImageStatus;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -30,6 +31,11 @@ public class CustomUserDetails {
 
     @Enumerated(EnumType.STRING)
     private Gender gender;
+
+    @Enumerated(EnumType.STRING)
+    private ImageStatus imageStatus;
+
+    private byte[] imageData;
 
     @OneToOne
     private UserRole userRole;

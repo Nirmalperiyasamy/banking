@@ -14,4 +14,11 @@ public class Const {
 
     public static final String ALL_USER = "/all-user";
 
+    public static final String UPLOAD_IMAGES = "/upload-images";
+
+    public static final String DOWNLOAD_IMAGES = "/download-images/{username}";
+
+    public static final String APPROVED_REJECTED = "/download-images/{username}/{decision}";
+
+
 }
