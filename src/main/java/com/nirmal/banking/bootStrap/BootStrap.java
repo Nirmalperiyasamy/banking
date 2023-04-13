@@ -2,21 +2,24 @@ package com.nirmal.banking.bootStrap;
 
 import com.nirmal.banking.dao.CustomUserDetails;
 import com.nirmal.banking.dto.UserDetailsDto;
-import com.nirmal.banking.repository.RoleRepo;
 import com.nirmal.banking.repository.UserDetailsRepo;
+import com.nirmal.banking.service.RoleService;
+import com.nirmal.banking.utils.KycStatus;
 import com.nirmal.banking.utils.Gender;
+import com.nirmal.banking.utils.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
 public class BootStrap {
 
-    private final RoleRepo roleRepo;
+    private final RoleService roleService;
 
     private final UserDetailsRepo userDetailsRepo;
 
@@ -24,27 +27,28 @@ public class BootStrap {
 
     @PostConstruct
     private void postConstructor() {
-        if (!isUsernameExist()) {
 
+        if (!isUsernameExist()) {
             UserDetailsDto userDetailsDto = UserDetailsDto.builder()
-                    .userName("Nirmal")
+                    .username("Nirmal")
                     .age(22)
                     .mobileNumber("8015277132")
                     .email("nirmal@gmail.com")
                     .password(passwordEncoder.encode("1234"))
                     .gender(Gender.MALE)
                     .aadhaar("12345678983")
-                    .userRole(roleRepo.findById(1).get())
+                    .uid(String.valueOf(UUID.randomUUID()))
+                    .userRole(roleService.getRole(Role.ADMIN))
                     .build();
 
             CustomUserDetails customUserDetails = new CustomUserDetails();
             BeanUtils.copyProperties(userDetailsDto, customUserDetails);
+            customUserDetails.setKycStatus(KycStatus.APPROVED);
             userDetailsRepo.save(customUserDetails);
-
         }
     }
 
     private boolean isUsernameExist() {
-        return userDetailsRepo.existsByuserName("Nirmal");
+        return userDetailsRepo.existsByusername("Nirmal");
     }
 }

@@ -1,7 +1,7 @@
 package com.nirmal.banking.dao;
 
 import com.nirmal.banking.utils.Gender;
-import com.nirmal.banking.utils.ImageStatus;
+import com.nirmal.banking.utils.KycStatus;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,7 +17,7 @@ public class CustomUserDetails {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
 
-    private String userName;
+    private String username;
 
     private String mobileNumber;
 
@@ -33,9 +33,9 @@ public class CustomUserDetails {
     private Gender gender;
 
     @Enumerated(EnumType.STRING)
-    private ImageStatus imageStatus;
+    private KycStatus kycStatus;
 
-    private byte[] imageData;
+    private String uid;
 
     @OneToOne
     private UserRole userRole;

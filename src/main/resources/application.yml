@@ -16,6 +16,9 @@ spring:
       max-file-size: 5MB
       max-request-size: 5MB
 
-
 server:
   port: 7000
+my:
+  secret.string: something
+
+fileStorage : D:\\springbootproject\\files

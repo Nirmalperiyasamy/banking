@@ -6,10 +6,11 @@ import com.nirmal.banking.dto.UserDetailsDto;
 import com.nirmal.banking.exception.CustomException;
 import com.nirmal.banking.repository.RoleRepo;
 import com.nirmal.banking.repository.UserDetailsRepo;
-import com.nirmal.banking.utils.ImageStatus;
-import com.nirmal.banking.utils.ImageUtil;
+import com.nirmal.banking.utils.KycStatus;
+import com.nirmal.banking.utils.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -19,41 +20,39 @@ public class AdminService {
 
     private final UserDetailsRepo userDetailsRepo;
 
-    private final RoleRepo roleRepo;
-
     private final PasswordEncoder passwordEncoder;
+
+    private final RoleService roleService;
+
 
     public CustomUserDetails addManager(UserDetailsDto userDetailsDto) {
         CustomUserDetails customUserDetails = new CustomUserDetails();
         BeanUtils.copyProperties(userDetailsDto, customUserDetails);
         customUserDetails.setPassword(passwordEncoder.encode(userDetailsDto.getPassword()));
-        customUserDetails.setUserRole(roleRepo.findById(2).get());
+        customUserDetails.setUserRole(roleService.getRole(Role.MANAGER));
         userDetailsRepo.save(customUserDetails);
         return customUserDetails;
     }
 
-    public byte[] downloadImages(String username) {
-        CustomUserDetails customUserDetails = userDetailsRepo.findByuserName(username);
-        byte[] images = ImageUtil.decompressImage(customUserDetails.getImageData());
-        customUserDetails.setImageStatus(ImageStatus.PENDING);
-        userDetailsRepo.save(customUserDetails);
-        return images;
-    }
-
     public String approvedRejected(String username, String status) {
 
-        if (status.equals("1")) {
-            CustomUserDetails customUserDetails = userDetailsRepo.findByuserName(username);
-            customUserDetails.setImageStatus(ImageStatus.APPROVED);
-            userDetailsRepo.save(customUserDetails);
-            return "User " + username + ImageStatus.APPROVED;
-        } else if (status.equals("0")) {
-            CustomUserDetails customUserDetails = userDetailsRepo.findByuserName(username);
-            customUserDetails.setImageStatus(ImageStatus.REJECTED);
-            userDetailsRepo.save(customUserDetails);
-            return "User " + username + ImageStatus.REJECTED;
-        } else {
-            throw new CustomException(ErrorMessages.STATUS_ERROR);
+        KycStatus kycstatus = KycStatus.valueOf(status.toUpperCase());
+        CustomUserDetails customUserDetails = userDetailsRepo.findByusername(username);
+
+        switch (kycstatus) {
+            case APPROVED:
+                customUserDetails.setKycStatus(KycStatus.APPROVED);
+                userDetailsRepo.save(customUserDetails);
+                return "User " + username + KycStatus.APPROVED;
+
+            case REJECTED:
+                customUserDetails.setKycStatus(KycStatus.REJECTED);
+                userDetailsRepo.save(customUserDetails);
+                return "User " + username + KycStatus.REJECTED;
+
+            default:
+                throw new CustomException(ErrorMessages.STATUS_ERROR);
         }
+
     }
 }

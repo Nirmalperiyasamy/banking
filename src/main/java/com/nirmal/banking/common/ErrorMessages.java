@@ -12,5 +12,8 @@ public class ErrorMessages {
     public static final String COMPRESS_ERROR = "Error while compressing";
     public static final String DECOMPRESS_ERROR = "Error while decompressing";
     public static final String MAXIMUM_SIZE = "Maximum file size is 5MB";
-    public static final String STATUS_ERROR = "Enter 0 for rejection or 1 for approval";
+    public static final String STATUS_ERROR = "Enter REJECTED for rejection or APPROVED for approval";
+    public static final String USER_NOT_REGISTERED = "User not registered";
+    public static final String INVALID = "Invalid username or password";
+    public static final String ROLE_NOT_FOUND = "Role not found ";
 }
