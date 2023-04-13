@@ -7,8 +7,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface UserDetailsRepo extends JpaRepository<CustomUserDetails, Integer> {
 
-    boolean existsByuserName(String username);
+    boolean existsByusername(String username);
 
-    CustomUserDetails findByuserName(String username);
+    CustomUserDetails findByusername(String username);
 
+    CustomUserDetails findByuid(String uid);
 }

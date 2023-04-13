@@ -14,4 +14,12 @@ public class Const {
 
     public static final String ALL_USER = "/all-user";
 
+    public static final String UPLOAD_IMAGES = "/upload-images";
+
+    public static final String DOWNLOAD_IMAGES = "/download-images/{uid}";
+
+    public static final String VALIDATE_KYC = "/decision-status/{uid}/{decision}";
+
+    public static final String TOKEN = "/token";
+
 }

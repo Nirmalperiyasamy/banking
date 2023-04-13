@@ -24,7 +24,7 @@ public class UserDetailsDto {
     private int id;
 
     @NotNull(message = ErrorMessages.USER_NAME)
-    private String userName;
+    private String username;
 
     @NotNull(message = ErrorMessages.MOBILE_NUMBER)
     @Pattern(regexp = "(^$|[0-9]{10})", message = ErrorMessages.MOBILE_NUMBER)
@@ -49,6 +49,8 @@ public class UserDetailsDto {
     @NotNull(message = ErrorMessages.GENDER)
     @Enumerated(EnumType.STRING)
     private Gender gender;
+
+    private String uid;
 
     private UserRole userRole;
 }
