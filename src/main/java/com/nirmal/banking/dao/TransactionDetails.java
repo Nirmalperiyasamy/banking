@@ -27,6 +27,8 @@ public class TransactionDetails {
 
     private Long totalAmount;
 
+    private Long initiatedAt;
+
     public TransactionDetails(Integer amount, TransactionType transactionType) {
         this.amount = amount;
         this.transactionType = transactionType;

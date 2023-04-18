@@ -1,6 +1,7 @@
 package com.nirmal.banking.controller;
 
 import com.nirmal.banking.dto.TransactionDetailsDto;
+import com.nirmal.banking.dto.UserBankDetailsDto;
 import com.nirmal.banking.dto.UserDetailsDto;
 import com.nirmal.banking.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -27,17 +28,22 @@ public class UserController {
     }
 
     @PostMapping(DEPOSIT)
-    private ResponseEntity<?> deposit(@RequestBody TransactionDetailsDto transactionDetailsDto, HttpServletRequest request){
-        return ResponseEntity.ok(userService.depositAmount(request,transactionDetailsDto.getAmount()));
+    private ResponseEntity<?> deposit(@RequestBody TransactionDetailsDto transactionDetailsDto, HttpServletRequest request) {
+        return ResponseEntity.ok(userService.depositAmount(request, transactionDetailsDto.getAmount()));
+    }
+
+    @PostMapping(ADD_BANK_DETAILS)
+    private ResponseEntity<?> addBank(@Valid @RequestBody UserBankDetailsDto userBankDetailsDto, HttpServletRequest request) {
+        return ResponseEntity.ok(userService.addBankDetails(userBankDetailsDto,request));
     }
 
     @PostMapping(WITHDRAW)
-    private ResponseEntity<?> debit(@RequestBody TransactionDetailsDto transactionDetailsDto,HttpServletRequest request){
-        return ResponseEntity.ok(userService.withdrawAmount(request,transactionDetailsDto.getAmount()));
+    private ResponseEntity<?> debit(@RequestBody TransactionDetailsDto transactionDetailsDto, HttpServletRequest request) {
+        return ResponseEntity.ok(userService.withdrawAmount(request, transactionDetailsDto.getAmount()));
     }
 
     @GetMapping(BALANCE)
-    private ResponseEntity<?> amountBalance(HttpServletRequest request){
+    private ResponseEntity<?> amountBalance(HttpServletRequest request) {
         return ResponseEntity.ok(userService.amountBalance(request));
     }
 

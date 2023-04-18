@@ -20,6 +20,8 @@ public class ErrorMessages {
     public static final String KYC_NOT_APPROVED = "Your verification proof details are not approved please re-upload";
     public static final String INSUFFICIENT_BALANCE = "In sufficient balance in your account";
     public static final String USERNAME_EXIST = "Username already exist please try with other name" +
-                                                   "like adding some extra words to your name";
+            "like adding some extra words to your name";
+    public static final String BANK_ACCOUNT_NUMBER = "Enter valid account number";
+    public static final String IFSC_CODE = "Enter valid IFSC code";
 
 }

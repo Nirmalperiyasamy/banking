@@ -4,11 +4,14 @@ import com.nirmal.banking.common.ErrorMessages;
 import com.nirmal.banking.common.SuccessMessages;
 import com.nirmal.banking.dao.CustomUserDetails;
 import com.nirmal.banking.dao.TransactionDetails;
+import com.nirmal.banking.dao.UserBankDetails;
 import com.nirmal.banking.dto.TransactionDetailsDto;
+import com.nirmal.banking.dto.UserBankDetailsDto;
 import com.nirmal.banking.dto.UserDetailsDto;
 import com.nirmal.banking.exception.CustomException;
 import com.nirmal.banking.interceptor.JwtUtil;
 import com.nirmal.banking.repository.TransactionRepo;
+import com.nirmal.banking.repository.UserBankDetailsRepo;
 import com.nirmal.banking.repository.UserDetailsRepo;
 import com.nirmal.banking.utils.FileType;
 import com.nirmal.banking.utils.KycStatus;
@@ -40,6 +43,8 @@ public class UserService implements UserDetailsService {
 
     private final TransactionRepo transactionRepo;
 
+    private final UserBankDetailsRepo userBankDetailsRepo;
+
     private final PasswordEncoder passwordEncoder;
 
     private final JwtUtil jwtUtil;
@@ -66,6 +71,7 @@ public class UserService implements UserDetailsService {
         customUserDetails.setPassword(passwordEncoder.encode(userDetailsDto.getPassword()));
         customUserDetails.setUid(UUID.randomUUID().toString());
         customUserDetails.setKycStatus(KycStatus.PENDING);
+        customUserDetails.setInitiatedAt(System.currentTimeMillis());
         userDetailsRepo.save(customUserDetails);
         BeanUtils.copyProperties(customUserDetails, userDetailsDto);
         return userDetailsDto;
@@ -102,6 +108,7 @@ public class UserService implements UserDetailsService {
         transactionDetails.setAmount(depositAmount);
         transactionDetails.setTotalAmount(totalAmount(uid) + depositAmount);
         transactionDetails.setTransactionType(TransactionType.DEPOSIT);
+        transactionDetails.setInitiatedAt(System.currentTimeMillis());
         transactionRepo.save(transactionDetails);
         return depositAmount + SuccessMessages.AMOUNT_CREDITED;
     }
@@ -121,6 +128,7 @@ public class UserService implements UserDetailsService {
         transactionDetails.setAmount(debitedAmount);
         transactionDetails.setTotalAmount(totalAmount(uid) - debitedAmount);
         transactionDetails.setTransactionType(TransactionType.WITHDRAW);
+        transactionDetails.setInitiatedAt(System.currentTimeMillis());
         transactionRepo.save(transactionDetails);
         return debitedAmount + SuccessMessages.AMOUNT_DEBITED;
     }
@@ -163,5 +171,16 @@ public class UserService implements UserDetailsService {
 
     boolean userExist(String username) {
         return userDetailsRepo.existsByusername(username);
+    }
+
+    public String addBankDetails(UserBankDetailsDto userBankDetailsDto,HttpServletRequest request) {
+        String uid = extractUid(request);
+        UserBankDetails userBankDetails = new UserBankDetails();
+        userBankDetails.setUid(uid);
+        userBankDetails.setIfscCode(userBankDetailsDto.getIfscCode());
+        userBankDetails.setAccountNumber(userBankDetailsDto.getAccountNumber());
+        userBankDetails.setInitiatedAt(System.currentTimeMillis());
+        userBankDetailsRepo.save(userBankDetails);
+        return SuccessMessages.BANK_ACCOUNT_ADDED;
     }
 }

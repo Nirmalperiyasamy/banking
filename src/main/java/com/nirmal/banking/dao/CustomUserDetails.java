@@ -39,4 +39,6 @@ public class CustomUserDetails {
 
     @OneToOne
     private UserRole userRole;
+
+    private Long initiatedAt;
 }
