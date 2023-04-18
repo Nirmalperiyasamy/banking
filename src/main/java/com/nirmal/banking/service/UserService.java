@@ -98,11 +98,8 @@ public class UserService implements UserDetailsService {
             if (depositAmount < 1000) throw new CustomException(ErrorMessages.MINIMUM_DEPOSIT_AMOUNT);
 
         TransactionDetails transactionDetails = new TransactionDetails();
-        TransactionDetailsDto transactionDetailsDto = TransactionDetailsDto.builder()
-                .uid(uid)
-                .amount(depositAmount)
-                .build();
-        BeanUtils.copyProperties(transactionDetailsDto, transactionDetails);
+        transactionDetails.setUid(uid);
+        transactionDetails.setAmount(depositAmount);
         transactionDetails.setTotalAmount(totalAmount(uid) + depositAmount);
         transactionDetails.setTransactionType(TransactionType.DEPOSIT);
         transactionRepo.save(transactionDetails);
@@ -120,11 +117,8 @@ public class UserService implements UserDetailsService {
             throw new CustomException(ErrorMessages.INSUFFICIENT_BALANCE);
 
         TransactionDetails transactionDetails = new TransactionDetails();
-        TransactionDetailsDto transactionDetailsDto = TransactionDetailsDto.builder()
-                .uid(uid)
-                .amount(debitedAmount)
-                .build();
-        BeanUtils.copyProperties(transactionDetailsDto, transactionDetails);
+        transactionDetails.setUid(uid);
+        transactionDetails.setAmount(debitedAmount);
         transactionDetails.setTotalAmount(totalAmount(uid) - debitedAmount);
         transactionDetails.setTransactionType(TransactionType.WITHDRAW);
         transactionRepo.save(transactionDetails);
