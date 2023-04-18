@@ -31,12 +31,12 @@ public class UserController {
         return ResponseEntity.ok(userService.depositAmount(request,transactionDetailsDto.getAmount()));
     }
 
-    @PostMapping(DEBIT)
+    @PostMapping(WITHDRAW)
     private ResponseEntity<?> debit(@RequestBody TransactionDetailsDto transactionDetailsDto,HttpServletRequest request){
-        return ResponseEntity.ok(userService.debitedAmount(request,transactionDetailsDto.getAmount()));
+        return ResponseEntity.ok(userService.withdrawAmount(request,transactionDetailsDto.getAmount()));
     }
 
-    @GetMapping(AMOUNT_BALANCE)
+    @GetMapping(BALANCE)
     private ResponseEntity<?> amountBalance(HttpServletRequest request){
         return ResponseEntity.ok(userService.amountBalance(request));
     }
@@ -45,5 +45,4 @@ public class UserController {
     private ResponseEntity<?> uploadImages(@RequestBody MultipartFile[] files, HttpServletRequest request) throws IOException {
         return ResponseEntity.ok(userService.uploadImage(files, request));
     }
-
 }

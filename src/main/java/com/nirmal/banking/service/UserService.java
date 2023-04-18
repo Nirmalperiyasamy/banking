@@ -8,12 +8,12 @@ import com.nirmal.banking.dto.TransactionDetailsDto;
 import com.nirmal.banking.dto.UserDetailsDto;
 import com.nirmal.banking.exception.CustomException;
 import com.nirmal.banking.interceptor.JwtUtil;
-import com.nirmal.banking.repository.RoleRepo;
 import com.nirmal.banking.repository.TransactionRepo;
 import com.nirmal.banking.repository.UserDetailsRepo;
 import com.nirmal.banking.utils.FileType;
 import com.nirmal.banking.utils.KycStatus;
 import com.nirmal.banking.utils.Role;
+import com.nirmal.banking.utils.TransactionType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -72,9 +72,7 @@ public class UserService implements UserDetailsService {
     }
 
     public String uploadImage(MultipartFile[] file, HttpServletRequest request) throws IOException {
-
         String uid = extractUid(request);
-
         String filePath = fileStoragePath + File.separator + uid;
         File folder = new File(filePath);
         folder.mkdir();
@@ -90,56 +88,67 @@ public class UserService implements UserDetailsService {
     public String depositAmount(HttpServletRequest request, Integer depositAmount) {
         String uid = extractUid(request);
         CustomUserDetails customUserDetails = userDetailsRepo.findByuid(uid);
-        if (!customUserDetails.getKycStatus().equals(KycStatus.APPROVED)) {
+
+        if (!customUserDetails.getKycStatus().equals(KycStatus.APPROVED))
             throw new CustomException(ErrorMessages.KYC_NOT_APPROVED);
-        }
-        if (!transactionRepo.existsByUid(uid)) {
-            if (depositAmount < 1000) {
-                throw new CustomException(ErrorMessages.MINIMUM_DEPOSIT_AMOUNT);
-            }
-        }
+
+        if (!transactionRepo.existsByUid(uid))
+            if (depositAmount < 1000) throw new CustomException(ErrorMessages.MINIMUM_DEPOSIT_AMOUNT);
+
         TransactionDetails transactionDetails = new TransactionDetails();
         TransactionDetailsDto transactionDetailsDto = TransactionDetailsDto.builder()
                 .uid(uid)
                 .amount(depositAmount)
                 .build();
         BeanUtils.copyProperties(transactionDetailsDto, transactionDetails);
+        transactionDetails.setTotalAmount(totalAmount(uid) + depositAmount);
+        transactionDetails.setTransactionType(TransactionType.DEPOSIT);
         transactionRepo.save(transactionDetails);
-        transactionDetails.setTotalAmount(transactionRepo.getTotalAmountByUid(uid));
-        transactionRepo.save(transactionDetails);
-        return depositAmount.toString() + SuccessMessages.AMOUNT_CREDITED;
+        return depositAmount + SuccessMessages.AMOUNT_CREDITED;
     }
 
-    public String debitedAmount(HttpServletRequest request, Integer debitedAmount) {
+    public String withdrawAmount(HttpServletRequest request, Integer debitedAmount) {
         String uid = extractUid(request);
         CustomUserDetails customUserDetails = userDetailsRepo.findByuid(uid);
-        if (!customUserDetails.getKycStatus().equals(KycStatus.APPROVED)) {
+
+        if (!customUserDetails.getKycStatus().equals(KycStatus.APPROVED))
             throw new CustomException(ErrorMessages.KYC_NOT_APPROVED);
-        }
-        if (debitedAmount > transactionRepo.getTotalAmountByUid(uid)) {
+
+        if (debitedAmount > totalAmount(uid))
             throw new CustomException(ErrorMessages.INSUFFICIENT_BALANCE);
-        }
+
         TransactionDetails transactionDetails = new TransactionDetails();
         TransactionDetailsDto transactionDetailsDto = TransactionDetailsDto.builder()
                 .uid(uid)
-                .amount(-debitedAmount)
+                .amount(debitedAmount)
                 .build();
         BeanUtils.copyProperties(transactionDetailsDto, transactionDetails);
+        transactionDetails.setTotalAmount(totalAmount(uid) - debitedAmount);
+        transactionDetails.setTransactionType(TransactionType.WITHDRAW);
         transactionRepo.save(transactionDetails);
-        transactionDetails.setTotalAmount(transactionRepo.getTotalAmountByUid(uid));
-        transactionRepo.save(transactionDetails);
-        return debitedAmount.toString() + SuccessMessages.AMOUNT_DEBITED;
+        return debitedAmount + SuccessMessages.AMOUNT_DEBITED;
+    }
+
+    Long totalAmount(String uid) {
+        List<TransactionDetails> amountDetails = transactionRepo.totalAmount(uid);
+        return amountDetails.stream()
+                .mapToLong(amountDetail -> amountDetail.getTransactionType() == TransactionType.DEPOSIT ?
+                        amountDetail.getAmount() : -amountDetail.getAmount())
+                .sum();
+    }
+
+    public Long amountBalance(HttpServletRequest request) {
+        String uid = extractUid(request);
+        return totalAmount(uid);
     }
 
     private String extractUid(HttpServletRequest request) {
-
         String authorizationHeader = request.getHeader("Authorization");
         authorizationHeader = authorizationHeader.replace("Bearer", "");
         return jwtUtil.extractUsername(authorizationHeader.trim());
     }
 
     void convertMultipartFileToFile(MultipartFile[] multipartFiles, String filePath) throws IOException {
-
         File aadhaarFile = new File(filePath + File.separator + FileType.AADHAAR);
         multipartFiles[0].transferTo(aadhaarFile);
 
@@ -158,10 +167,5 @@ public class UserService implements UserDetailsService {
 
     boolean userExist(String username) {
         return userDetailsRepo.existsByusername(username);
-    }
-
-    public Long amountBalance(HttpServletRequest request) {
-        String uid = extractUid(request);
-        return transactionRepo.getTotalAmountByUid(uid);
     }
 }

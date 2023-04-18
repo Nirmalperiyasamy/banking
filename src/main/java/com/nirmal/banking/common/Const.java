@@ -22,9 +22,9 @@ public class Const {
 
     public static final String LOGIN = "/login";
 
-    public static final String DEBIT = "/debit";
+    public static final String WITHDRAW = "/withdraw";
 
-    public static final String AMOUNT_BALANCE  ="/amount-balance";
+    public static final String BALANCE  ="/balance";
 
     public static final String DEPOSIT = "/deposit";
 

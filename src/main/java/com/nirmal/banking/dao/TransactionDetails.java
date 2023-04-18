@@ -1,6 +1,8 @@
 package com.nirmal.banking.dao;
 
+import com.nirmal.banking.utils.TransactionType;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
@@ -9,6 +11,7 @@ import javax.persistence.*;
 @Table
 @Getter
 @Setter
+@NoArgsConstructor
 public class TransactionDetails {
 
     @Id
@@ -19,5 +22,13 @@ public class TransactionDetails {
 
     private Integer amount;
 
+    @Enumerated(EnumType.STRING)
+    private TransactionType transactionType;
+
     private Long totalAmount;
+
+    public TransactionDetails(Integer amount, TransactionType transactionType) {
+        this.amount = amount;
+        this.transactionType = transactionType;
+    }
 }
