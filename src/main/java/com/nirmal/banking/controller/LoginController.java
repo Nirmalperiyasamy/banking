@@ -29,13 +29,13 @@ public class LoginController {
 
     @PostMapping(LOGIN)
     private ResponseEntity<?> token(@RequestBody UserDetailsDto userDetailsDto, HttpServletResponse response) {
-        String uid = userService.findByName(userDetailsDto.getUsername());
         try {
+            String uid = userService.findByName(userDetailsDto.getUsername());
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(uid, userDetailsDto.getPassword()));
+            String token = jwtUtil.generateToken(uid);
+            return ResponseEntity.ok(token);
         } catch (Exception e) {
             throw new CustomException(ErrorMessages.INVALID);
         }
-        String token = jwtUtil.generateToken(uid);
-        return ResponseEntity.ok(token);
     }
 }

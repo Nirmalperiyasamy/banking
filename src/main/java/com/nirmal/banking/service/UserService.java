@@ -65,7 +65,7 @@ public class UserService implements UserDetailsService {
         customUserDetails.setUserRole(roleService.getRole(Role.USER));
         customUserDetails.setPassword(passwordEncoder.encode(userDetailsDto.getPassword()));
         customUserDetails.setUid(UUID.randomUUID().toString());
-        customUserDetails.setKycStatus(KycStatus.APPROVED);
+        customUserDetails.setKycStatus(KycStatus.PENDING);
         userDetailsRepo.save(customUserDetails);
         BeanUtils.copyProperties(customUserDetails, userDetailsDto);
         return userDetailsDto;
@@ -89,9 +89,11 @@ public class UserService implements UserDetailsService {
         String uid = extractUid(request);
         CustomUserDetails customUserDetails = userDetailsRepo.findByuid(uid);
 
+        //Verifying the user is approved by The Admin.
         if (!customUserDetails.getKycStatus().equals(KycStatus.APPROVED))
             throw new CustomException(ErrorMessages.KYC_NOT_APPROVED);
 
+        //Initial deposit amount.
         if (!transactionRepo.existsByUid(uid))
             if (depositAmount < 1000) throw new CustomException(ErrorMessages.MINIMUM_DEPOSIT_AMOUNT);
 
