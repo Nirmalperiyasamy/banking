@@ -27,7 +27,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final AuthJwtFilter authJwtFilter;
 
-    private final String[] PERMITTED_ROUTES = {"/api/user/add-user", "/api/token"};
+    private final String[] PERMITTED_ROUTES = {"/api/user/add-user", "/login"};
     private final String USER_ROUTE = "/api/user/**";
     private final String ADMIN_ROUTE = "/api/admin/**";
     private final String MANAGER_ROUTE = "/api/manager/**";

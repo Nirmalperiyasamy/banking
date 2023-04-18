@@ -16,4 +16,10 @@ public class ErrorMessages {
     public static final String USER_NOT_REGISTERED = "User not registered";
     public static final String INVALID = "Invalid username or password";
     public static final String ROLE_NOT_FOUND = "Role not found ";
+    public static final String MINIMUM_DEPOSIT_AMOUNT = "Minimum deposit amount should be greater than 1000";
+    public static final String KYC_NOT_APPROVED = "Your verification proof details are not approved please re-upload";
+    public static final String INSUFFICIENT_BALANCE = "In sufficient balance in your account";
+    public static final String USERNAME_EXIST = "Username already exist please try with other name" +
+                                                   "like adding some extra words to your name";
+
 }

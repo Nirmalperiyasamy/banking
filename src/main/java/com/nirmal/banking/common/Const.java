@@ -20,6 +20,12 @@ public class Const {
 
     public static final String VALIDATE_KYC = "/decision-status/{uid}/{decision}";
 
-    public static final String TOKEN = "/token";
+    public static final String LOGIN = "/login";
+
+    public static final String WITHDRAW = "/withdraw";
+
+    public static final String BALANCE  ="/balance";
+
+    public static final String DEPOSIT = "/deposit";
 
 }
