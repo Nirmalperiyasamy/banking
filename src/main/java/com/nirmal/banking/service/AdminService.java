@@ -1,11 +1,12 @@
 package com.nirmal.banking.service;
 
 import com.nirmal.banking.common.ErrorMessages;
+import com.nirmal.banking.dao.AdminSettings;
 import com.nirmal.banking.dao.CustomUserDetails;
 import com.nirmal.banking.dao.TransactionDetails;
 import com.nirmal.banking.dto.UserDetailsDto;
 import com.nirmal.banking.exception.CustomException;
-import com.nirmal.banking.repository.RoleRepo;
+import com.nirmal.banking.repository.AdminSettingsRepo;
 import com.nirmal.banking.repository.TransactionRepo;
 import com.nirmal.banking.repository.UserDetailsRepo;
 import com.nirmal.banking.utils.KycStatus;
@@ -13,11 +14,11 @@ import com.nirmal.banking.utils.Role;
 import com.nirmal.banking.utils.TransactionType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +27,8 @@ public class AdminService {
     private final UserDetailsRepo userDetailsRepo;
 
     private final TransactionRepo transactionRepo;
+
+    private final AdminSettingsRepo adminSettingsRepo;
 
     private final PasswordEncoder passwordEncoder;
 
@@ -120,6 +123,21 @@ public class AdminService {
 
             default:
                 throw new CustomException(ErrorMessages.STATUS_ERROR);
+        }
+    }
+
+    public AdminSettings withdrawInterestPercentage(Integer interest) {
+        if (!adminSettingsRepo.existsById(1)) {
+            AdminSettings adminSettings = new AdminSettings();
+            adminSettings.setId(1);
+            adminSettings.setInterestPercentage(interest);
+            adminSettingsRepo.save(adminSettings);
+            return adminSettings;
+        } else {
+            Optional<AdminSettings> adminSettings = adminSettingsRepo.findById(1);
+            adminSettings.get().setInterestPercentage(interest);
+            adminSettingsRepo.save(adminSettings.get());
+            return adminSettings.get();
         }
     }
 }

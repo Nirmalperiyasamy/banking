@@ -39,5 +39,6 @@ public class Const {
     public static final String DEPOSIT_DECISION = "/deposit-decision/{transaction-id}/{decision}";
 
     public static final String WITHDRAW_DECISION = "/withdraw-decision/{transaction-id}/{decision}";
+    public static final String WITHDRAW_INTEREST_PERCENTAGE = "/withdraw-interest-percentage";
 
 }

@@ -5,8 +5,6 @@ import com.nirmal.banking.exception.CustomException;
 import com.nirmal.banking.service.AdminService;
 import com.nirmal.banking.utils.KycStatus;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.repository.query.Param;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -50,21 +48,21 @@ public class AdminController {
         } catch (Exception exception) {
             throw new CustomException(STATUS_ERROR);
         }
-        return ResponseEntity.ok(adminService.depositApprove(transactionId,decision));
+        return ResponseEntity.ok(adminService.depositApprove(transactionId, decision));
     }
 
     @PutMapping(WITHDRAW_DECISION)
     private ResponseEntity<?> withdrawApprove(@PathVariable("transaction-id") String transactionId,
-                                              @PathVariable("decision") String decision){
+                                              @PathVariable("decision") String decision) {
         try {
             KycStatus kycStatus = KycStatus.valueOf(decision.toUpperCase());
         } catch (Exception exception) {
             throw new CustomException(STATUS_ERROR);
         }
-        return ResponseEntity.ok(adminService.withdrawApprove(transactionId,decision));
+        return ResponseEntity.ok(adminService.withdrawApprove(transactionId, decision));
     }
 
-    @GetMapping(VALIDATE_KYC)
+    @PutMapping(VALIDATE_KYC)
     private ResponseEntity<?> approved(@PathVariable("uid") String uid,
                                        @PathVariable("decision") String status) {
         try {
@@ -73,5 +71,10 @@ public class AdminController {
             throw new CustomException(STATUS_ERROR);
         }
         return ResponseEntity.ok(adminService.approvedRejected(uid, status));
+    }
+
+    @PostMapping(WITHDRAW_INTEREST_PERCENTAGE)
+    private ResponseEntity<?> withdrawInterestPercentage(@RequestBody String interest) {
+        return ResponseEntity.ok(adminService.withdrawInterestPercentage(Integer.parseInt(interest)));
     }
 }
