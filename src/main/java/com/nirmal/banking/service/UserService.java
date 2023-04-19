@@ -56,7 +56,7 @@ public class UserService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String uid) throws UsernameNotFoundException {
-        CustomUserDetails details = userDetailsRepo.findByuid(uid);
+        CustomUserDetails details = userDetailsRepo.findByUid(uid);
         List<GrantedAuthority> authorities = List.of((GrantedAuthority) () -> details.getUserRole().getRole().name());
         return new User(details.getUid(), details.getPassword(), authorities);
     }
@@ -85,7 +85,7 @@ public class UserService implements UserDetailsService {
 
         convertMultipartFileToFile(file, filePath);
 
-        CustomUserDetails customUserDetails = userDetailsRepo.findByuid(uid);
+        CustomUserDetails customUserDetails = userDetailsRepo.findByUid(uid);
         customUserDetails.setKycStatus(KycStatus.PENDING);
         userDetailsRepo.save(customUserDetails);
         return SuccessMessages.UPLOADED;
@@ -93,7 +93,7 @@ public class UserService implements UserDetailsService {
 
     public String depositAmount(HttpServletRequest request, Integer depositAmount) {
         String uid = extractUid(request);
-        CustomUserDetails customUserDetails = userDetailsRepo.findByuid(uid);
+        CustomUserDetails customUserDetails = userDetailsRepo.findByUid(uid);
 
         //Verifying the user is approved by The Admin.
         if (!customUserDetails.getKycStatus().equals(KycStatus.APPROVED))
@@ -105,9 +105,10 @@ public class UserService implements UserDetailsService {
 
         TransactionDetails transactionDetails = new TransactionDetails();
         transactionDetails.setUid(uid);
+        transactionDetails.setTransactionId(UUID.randomUUID().toString());
         transactionDetails.setAmount(depositAmount);
         transactionDetails.setTotalAmount(totalAmount(uid) + depositAmount);
-        transactionDetails.setTransactionType(TransactionType.DEPOSIT);
+        transactionDetails.setTransactionType(TransactionType.DEPOSIT_PENDING);
         transactionDetails.setInitiatedAt(System.currentTimeMillis());
         transactionRepo.save(transactionDetails);
         return depositAmount + SuccessMessages.AMOUNT_CREDITED;
@@ -115,7 +116,7 @@ public class UserService implements UserDetailsService {
 
     public String withdrawAmount(HttpServletRequest request, Integer debitedAmount) {
         String uid = extractUid(request);
-        CustomUserDetails customUserDetails = userDetailsRepo.findByuid(uid);
+        CustomUserDetails customUserDetails = userDetailsRepo.findByUid(uid);
 
         if (!customUserDetails.getKycStatus().equals(KycStatus.APPROVED))
             throw new CustomException(ErrorMessages.KYC_NOT_APPROVED);
@@ -125,20 +126,22 @@ public class UserService implements UserDetailsService {
 
         TransactionDetails transactionDetails = new TransactionDetails();
         transactionDetails.setUid(uid);
+        transactionDetails.setTransactionId(UUID.randomUUID().toString());
         transactionDetails.setAmount(debitedAmount);
         transactionDetails.setTotalAmount(totalAmount(uid) - debitedAmount);
-        transactionDetails.setTransactionType(TransactionType.WITHDRAW);
+        transactionDetails.setTransactionType(TransactionType.WITHDRAW_PENDING);
         transactionDetails.setInitiatedAt(System.currentTimeMillis());
         transactionRepo.save(transactionDetails);
         return debitedAmount + SuccessMessages.AMOUNT_DEBITED;
     }
 
     Long totalAmount(String uid) {
-        List<TransactionDetails> amountDetails = transactionRepo.totalAmount(uid);
-        return amountDetails.stream()
-                .mapToLong(amountDetail -> amountDetail.getTransactionType() == TransactionType.DEPOSIT ?
-                        amountDetail.getAmount() : -amountDetail.getAmount())
-                .sum();
+        return transactionRepo.totalAmount(uid).stream()
+                .filter(details -> details.getTransactionType() == TransactionType.DEPOSIT)
+                .mapToLong(TransactionDetails::getAmount).sum() -
+                transactionRepo.totalAmount(uid).stream()
+                        .filter(details -> details.getTransactionType() == TransactionType.WITHDRAW)
+                        .mapToLong(TransactionDetails::getAmount).sum();
     }
 
     public Long amountBalance(HttpServletRequest request) {
@@ -162,7 +165,7 @@ public class UserService implements UserDetailsService {
 
     public String findByName(String username) {
         if (userExist(username)) {
-            CustomUserDetails customUserDetails = userDetailsRepo.findByusername(username);
+            CustomUserDetails customUserDetails = userDetailsRepo.findByUsername(username);
             return customUserDetails.getUid();
         } else {
             throw new CustomException(ErrorMessages.USER_NOT_REGISTERED);
@@ -170,10 +173,10 @@ public class UserService implements UserDetailsService {
     }
 
     boolean userExist(String username) {
-        return userDetailsRepo.existsByusername(username);
+        return userDetailsRepo.existsByUsername(username);
     }
 
-    public String addBankDetails(UserBankDetailsDto userBankDetailsDto,HttpServletRequest request) {
+    public String addBankDetails(UserBankDetailsDto userBankDetailsDto, HttpServletRequest request) {
         String uid = extractUid(request);
         UserBankDetails userBankDetails = new UserBankDetails();
         userBankDetails.setUid(uid);

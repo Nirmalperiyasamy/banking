@@ -30,4 +30,14 @@ public class Const {
 
     public static final String ADD_BANK_DETAILS = "/add-bank";
 
+    public static final String PENDING_KYC = "/pending-kyc";
+
+    public static final String DEPOSIT_PENDING = "/deposit-pending";
+
+    public static final String WITHDRAW_PENDING = "/withdraw-pending";
+
+    public static final String DEPOSIT_DECISION = "/deposit-decision/{transaction-id}/{decision}";
+
+    public static final String WITHDRAW_DECISION = "/withdraw-decision/{transaction-id}/{decision}";
+
 }

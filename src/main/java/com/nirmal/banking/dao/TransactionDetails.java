@@ -20,6 +20,8 @@ public class TransactionDetails {
 
     private String uid;
 
+    private String transactionId;
+
     private Integer amount;
 
     @Enumerated(EnumType.STRING)
