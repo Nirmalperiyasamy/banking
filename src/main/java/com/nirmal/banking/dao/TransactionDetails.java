@@ -27,9 +27,13 @@ public class TransactionDetails {
     @Enumerated(EnumType.STRING)
     private TransactionType transactionType;
 
-    private Long totalAmount;
+    private Double totalAmount;
 
     private Long initiatedAt;
+
+    private Double withdrawInterestPercentage;
+
+    private Double withdrawInterestAmount;
 
     public TransactionDetails(Integer amount, TransactionType transactionType) {
         this.amount = amount;

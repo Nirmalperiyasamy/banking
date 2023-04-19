@@ -3,6 +3,7 @@ package com.nirmal.banking.controller;
 import com.nirmal.banking.dto.UserDetailsDto;
 import com.nirmal.banking.exception.CustomException;
 import com.nirmal.banking.service.AdminService;
+import com.nirmal.banking.service.AdminSettingsService;
 import com.nirmal.banking.utils.KycStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,8 @@ import static com.nirmal.banking.common.ErrorMessages.STATUS_ERROR;
 public class AdminController {
 
     private final AdminService adminService;
+
+    private final AdminSettingsService adminSettingsService;
 
     @PostMapping(ADD_MANAGER)
     private ResponseEntity<?> addManager(@Valid @RequestBody UserDetailsDto userDetailsDto) {
@@ -75,6 +78,6 @@ public class AdminController {
 
     @PostMapping(WITHDRAW_INTEREST_PERCENTAGE)
     private ResponseEntity<?> withdrawInterestPercentage(@RequestBody String interest) {
-        return ResponseEntity.ok(adminService.withdrawInterestPercentage(Integer.parseInt(interest)));
+        return ResponseEntity.ok(adminSettingsService.withdrawInterestPercentage(Double.parseDouble(interest)));
     }
 }

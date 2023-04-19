@@ -2,14 +2,15 @@ package com.nirmal.banking.service;
 
 import com.nirmal.banking.common.ErrorMessages;
 import com.nirmal.banking.common.SuccessMessages;
+import com.nirmal.banking.dao.AdminSettings;
 import com.nirmal.banking.dao.CustomUserDetails;
 import com.nirmal.banking.dao.TransactionDetails;
 import com.nirmal.banking.dao.UserBankDetails;
-import com.nirmal.banking.dto.TransactionDetailsDto;
 import com.nirmal.banking.dto.UserBankDetailsDto;
 import com.nirmal.banking.dto.UserDetailsDto;
 import com.nirmal.banking.exception.CustomException;
 import com.nirmal.banking.interceptor.JwtUtil;
+import com.nirmal.banking.repository.AdminSettingsRepo;
 import com.nirmal.banking.repository.TransactionRepo;
 import com.nirmal.banking.repository.UserBankDetailsRepo;
 import com.nirmal.banking.repository.UserDetailsRepo;
@@ -33,6 +34,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -44,6 +46,8 @@ public class UserService implements UserDetailsService {
     private final TransactionRepo transactionRepo;
 
     private final UserBankDetailsRepo userBankDetailsRepo;
+
+    private final AdminSettingsRepo adminSettingsRepo;
 
     private final PasswordEncoder passwordEncoder;
 
@@ -107,9 +111,11 @@ public class UserService implements UserDetailsService {
         transactionDetails.setUid(uid);
         transactionDetails.setTransactionId(UUID.randomUUID().toString());
         transactionDetails.setAmount(depositAmount);
-        transactionDetails.setTotalAmount(totalAmount(uid) + depositAmount);
+        transactionDetails.setTotalAmount(totalAmount(uid));
         transactionDetails.setTransactionType(TransactionType.DEPOSIT_PENDING);
         transactionDetails.setInitiatedAt(System.currentTimeMillis());
+        transactionDetails.setWithdrawInterestPercentage(0D);
+        transactionDetails.setWithdrawInterestAmount(0D);
         transactionRepo.save(transactionDetails);
         return depositAmount + SuccessMessages.AMOUNT_CREDITED;
     }
@@ -128,23 +134,36 @@ public class UserService implements UserDetailsService {
         transactionDetails.setUid(uid);
         transactionDetails.setTransactionId(UUID.randomUUID().toString());
         transactionDetails.setAmount(debitedAmount);
-        transactionDetails.setTotalAmount(totalAmount(uid) - debitedAmount);
+        transactionDetails.setTotalAmount(totalAmount(uid));
         transactionDetails.setTransactionType(TransactionType.WITHDRAW_PENDING);
         transactionDetails.setInitiatedAt(System.currentTimeMillis());
+        transactionDetails.setWithdrawInterestPercentage(withdrawInterestPercentage());
+        transactionDetails.setWithdrawInterestAmount(WithdrawInterestAmount(debitedAmount));
         transactionRepo.save(transactionDetails);
-        return debitedAmount + SuccessMessages.AMOUNT_DEBITED;
+        return debitedAmount - WithdrawInterestAmount(debitedAmount) + SuccessMessages.AMOUNT_DEBITED
+                + withdrawInterestPercentage() + SuccessMessages.WITHDRAW_FEE_PERCENTAGE
+                + WithdrawInterestAmount(debitedAmount) + SuccessMessages.WITHDRAW_FEE_AMOUNT;
     }
 
-    Long totalAmount(String uid) {
+    private Double withdrawInterestPercentage() {
+        Optional<AdminSettings> adminService = adminSettingsRepo.findById(1);
+        return adminService.get().getWithdrawInterestPercentage();
+    }
+
+    private Double WithdrawInterestAmount(Integer debitedAmount) {
+        return (double) (debitedAmount * (withdrawInterestPercentage() / 100));
+    }
+
+    Double totalAmount(String uid) {
         return transactionRepo.totalAmount(uid).stream()
                 .filter(details -> details.getTransactionType() == TransactionType.DEPOSIT)
-                .mapToLong(TransactionDetails::getAmount).sum() -
+                .mapToDouble(TransactionDetails::getAmount).sum() -
                 transactionRepo.totalAmount(uid).stream()
                         .filter(details -> details.getTransactionType() == TransactionType.WITHDRAW)
-                        .mapToLong(TransactionDetails::getAmount).sum();
+                        .mapToDouble(TransactionDetails::getAmount).sum();
     }
 
-    public Long amountBalance(HttpServletRequest request) {
+    public Double amountBalance(HttpServletRequest request) {
         String uid = extractUid(request);
         return totalAmount(uid);
     }
