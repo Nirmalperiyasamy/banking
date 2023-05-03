@@ -17,12 +17,12 @@ public class AdminSettingsService {
         if (!adminSettingsRepo.existsById(1)) {
             AdminSettings adminSettings = new AdminSettings();
             adminSettings.setId(1);
-            adminSettings.setWithdrawInterestPercentage(interest);
+            adminSettings.setWithdrawFeePercentage(interest);
             adminSettingsRepo.save(adminSettings);
             return adminSettings;
         } else {
             Optional<AdminSettings> adminSettings = adminSettingsRepo.findById(1);
-            adminSettings.get().setWithdrawInterestPercentage(interest);
+            adminSettings.get().setWithdrawFeePercentage(interest);
             adminSettingsRepo.save(adminSettings.get());
             return adminSettings.get();
         }

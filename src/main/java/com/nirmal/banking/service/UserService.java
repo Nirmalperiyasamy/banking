@@ -14,10 +14,7 @@ import com.nirmal.banking.repository.AdminSettingsRepo;
 import com.nirmal.banking.repository.TransactionRepo;
 import com.nirmal.banking.repository.UserBankDetailsRepo;
 import com.nirmal.banking.repository.UserDetailsRepo;
-import com.nirmal.banking.utils.FileType;
-import com.nirmal.banking.utils.KycStatus;
-import com.nirmal.banking.utils.Role;
-import com.nirmal.banking.utils.TransactionType;
+import com.nirmal.banking.utils.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -111,11 +108,12 @@ public class UserService implements UserDetailsService {
         transactionDetails.setUid(uid);
         transactionDetails.setTransactionId(UUID.randomUUID().toString());
         transactionDetails.setAmount(depositAmount);
-        transactionDetails.setTotalAmount(totalAmount(uid));
-        transactionDetails.setTransactionType(TransactionType.DEPOSIT_PENDING);
+        transactionDetails.setTotalAmount(totalAmount(uid) + depositAmount);
+        transactionDetails.setTransactionType(TransactionType.DEPOSIT);
+        transactionDetails.setTransactionStatus(TransactionStatus.APPROVED);
         transactionDetails.setInitiatedAt(System.currentTimeMillis());
-        transactionDetails.setWithdrawInterestPercentage(0D);
-        transactionDetails.setWithdrawInterestAmount(0D);
+        transactionDetails.setWithdrawFeePercentage(0D);
+        transactionDetails.setWithdrawFee(0D);
         transactionRepo.save(transactionDetails);
         return depositAmount + SuccessMessages.AMOUNT_CREDITED;
     }
@@ -134,33 +132,34 @@ public class UserService implements UserDetailsService {
         transactionDetails.setUid(uid);
         transactionDetails.setTransactionId(UUID.randomUUID().toString());
         transactionDetails.setAmount(debitedAmount);
-        transactionDetails.setTotalAmount(totalAmount(uid));
-        transactionDetails.setTransactionType(TransactionType.WITHDRAW_PENDING);
+        transactionDetails.setTotalAmount(totalAmount(uid) - debitedAmount - WithdrawFeeAmount(debitedAmount));
+        transactionDetails.setTransactionType(TransactionType.WITHDRAW);
+        transactionDetails.setTransactionStatus(TransactionStatus.PENDING);
         transactionDetails.setInitiatedAt(System.currentTimeMillis());
-        transactionDetails.setWithdrawInterestPercentage(withdrawInterestPercentage());
-        transactionDetails.setWithdrawInterestAmount(WithdrawInterestAmount(debitedAmount));
+        transactionDetails.setWithdrawFeePercentage(withdrawFeePercentage());
+        transactionDetails.setWithdrawFee(WithdrawFeeAmount(debitedAmount));
         transactionRepo.save(transactionDetails);
-        return debitedAmount - WithdrawInterestAmount(debitedAmount) + SuccessMessages.AMOUNT_DEBITED
-                + withdrawInterestPercentage() + SuccessMessages.WITHDRAW_FEE_PERCENTAGE
-                + WithdrawInterestAmount(debitedAmount) + SuccessMessages.WITHDRAW_FEE_AMOUNT;
+        return debitedAmount - WithdrawFeeAmount(debitedAmount) + SuccessMessages.AMOUNT_DEBITED
+                + withdrawFeePercentage() + SuccessMessages.WITHDRAW_FEE_PERCENTAGE
+                + WithdrawFeeAmount(debitedAmount) + SuccessMessages.WITHDRAW_FEE_AMOUNT;
     }
 
-    private Double withdrawInterestPercentage() {
+
+    private Double withdrawFeePercentage() {
         Optional<AdminSettings> adminService = adminSettingsRepo.findById(1);
-        return adminService.get().getWithdrawInterestPercentage();
+        return adminService.get().getWithdrawFeePercentage();
     }
 
-    private Double WithdrawInterestAmount(Integer debitedAmount) {
-        return (double) (debitedAmount * (withdrawInterestPercentage() / 100));
+    private Double WithdrawFeeAmount(Integer debitedAmount) {
+        return (debitedAmount * (withdrawFeePercentage() / 100));
     }
 
     Double totalAmount(String uid) {
+        // TODO: Need to move summation to SQL
         return transactionRepo.totalAmount(uid).stream()
-                .filter(details -> details.getTransactionType() == TransactionType.DEPOSIT)
-                .mapToDouble(TransactionDetails::getAmount).sum() -
-                transactionRepo.totalAmount(uid).stream()
-                        .filter(details -> details.getTransactionType() == TransactionType.WITHDRAW)
-                        .mapToDouble(TransactionDetails::getAmount).sum();
+                .mapToDouble(amountDetail -> amountDetail.getTransactionType() == TransactionType.DEPOSIT ?
+                        amountDetail.getAmount() : -amountDetail.getAmount())
+                .sum();
     }
 
     public Double amountBalance(HttpServletRequest request) {

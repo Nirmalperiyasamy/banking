@@ -1,5 +1,6 @@
 package com.nirmal.banking.dao;
 
+import com.nirmal.banking.utils.TransactionStatus;
 import com.nirmal.banking.utils.TransactionType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -27,16 +28,20 @@ public class TransactionDetails {
     @Enumerated(EnumType.STRING)
     private TransactionType transactionType;
 
+    @Enumerated(EnumType.STRING)
+    private TransactionStatus transactionStatus;
+
     private Double totalAmount;
 
     private Long initiatedAt;
 
-    private Double withdrawInterestPercentage;
+    private Double withdrawFeePercentage;
 
-    private Double withdrawInterestAmount;
+    private Double withdrawFee;
 
-    public TransactionDetails(Integer amount, TransactionType transactionType) {
+    public TransactionDetails(Integer amount, TransactionType transactionType, TransactionStatus transactionStatus) {
         this.amount = amount;
         this.transactionType = transactionType;
+        this.transactionStatus = transactionStatus;
     }
 }

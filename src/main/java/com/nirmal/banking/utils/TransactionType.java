@@ -4,11 +4,5 @@ public enum TransactionType {
 
     DEPOSIT,
 
-    WITHDRAW,
-
-    DEPOSIT_PENDING,
-
-    WITHDRAW_PENDING,
-
-    REJECTED
+    WITHDRAW
 }

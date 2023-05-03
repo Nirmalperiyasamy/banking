@@ -15,5 +15,5 @@ public class AdminSettings {
     @Id
     private Integer id;
 
-    private Double withdrawInterestPercentage;
+    private Double withdrawFeePercentage;
 }

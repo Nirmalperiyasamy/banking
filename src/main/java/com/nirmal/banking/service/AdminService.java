@@ -9,6 +9,7 @@ import com.nirmal.banking.repository.TransactionRepo;
 import com.nirmal.banking.repository.UserDetailsRepo;
 import com.nirmal.banking.utils.KycStatus;
 import com.nirmal.banking.utils.Role;
+import com.nirmal.banking.utils.TransactionStatus;
 import com.nirmal.banking.utils.TransactionType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
@@ -65,11 +66,11 @@ public class AdminService {
     }
 
     public List<TransactionDetails> depositPending() {
-        return transactionRepo.findAllByTransactionType(TransactionType.DEPOSIT_PENDING);
+        return transactionRepo.findAllByTransactionStatus(TransactionStatus.PENDING);
     }
 
     public List<TransactionDetails> withdrawPending() {
-        return transactionRepo.findAllByTransactionType(TransactionType.WITHDRAW_PENDING);
+        return transactionRepo.findAllByTransactionStatus(TransactionStatus.PENDING);
     }
 
     public String depositApprove(String transactionId, String decision) {
@@ -77,15 +78,16 @@ public class AdminService {
         TransactionDetails transactionDetails = transactionRepo.findByTransactionId(transactionId);
         switch (kycstatus) {
             case APPROVED:
-                transactionDetails.setTransactionType(TransactionType.DEPOSIT);
+                transactionDetails.setTransactionStatus(TransactionStatus.APPROVED);
+                transactionRepo.save(transactionDetails);
                 transactionDetails.setTotalAmount(totalAmount(transactionDetails.getUid()) + transactionDetails.getAmount());
                 transactionRepo.save(transactionDetails);
-                return "User " + TransactionType.DEPOSIT;
+                return "User Amount => " + TransactionType.DEPOSIT;
 
             case REJECTED:
-                transactionDetails.setTransactionType(TransactionType.REJECTED);
+                transactionDetails.setTransactionStatus(TransactionStatus.REJECTED);
                 transactionRepo.save(transactionDetails);
-                return "User " + TransactionType.REJECTED;
+                return "User Amount => " + TransactionStatus.REJECTED;
 
             default:
                 throw new CustomException(ErrorMessages.STATUS_ERROR);
@@ -93,12 +95,11 @@ public class AdminService {
     }
 
     Double totalAmount(String uid) {
+        // TODO: Need to move summation to SQL
         return transactionRepo.totalAmount(uid).stream()
-                .filter(details -> details.getTransactionType() == TransactionType.DEPOSIT)
-                .mapToDouble(TransactionDetails::getAmount).sum() -
-                transactionRepo.totalAmount(uid).stream()
-                        .filter(details -> details.getTransactionType() == TransactionType.WITHDRAW)
-                        .mapToDouble(TransactionDetails::getAmount).sum();
+                .mapToDouble(amountDetail -> amountDetail.getTransactionType() == TransactionType.DEPOSIT ?
+                        amountDetail.getAmount() : -amountDetail.getAmount())
+                .sum();
     }
 
     public String withdrawApprove(String transactionId, String decision) {
@@ -106,16 +107,17 @@ public class AdminService {
         TransactionDetails transactionDetails = transactionRepo.findByTransactionId(transactionId);
         switch (kycstatus) {
             case APPROVED:
-                transactionDetails.setTransactionType(TransactionType.WITHDRAW);
-                transactionDetails.setTotalAmount(totalAmount(transactionDetails.getUid()) - transactionDetails.getAmount() -
-                        transactionDetails.getWithdrawInterestAmount());
+                transactionDetails.setTransactionStatus(TransactionStatus.APPROVED);
                 transactionRepo.save(transactionDetails);
-                return "User " + TransactionType.WITHDRAW;
+                transactionDetails.setTotalAmount(totalAmount(transactionDetails.getUid()) - transactionDetails.getAmount() -
+                        transactionDetails.getWithdrawFee());
+                transactionRepo.save(transactionDetails);
+                return "User Amount =>" + TransactionType.WITHDRAW;
 
             case REJECTED:
-                transactionDetails.setTransactionType(TransactionType.REJECTED);
+                transactionDetails.setTransactionStatus(TransactionStatus.REJECTED);
                 transactionRepo.save(transactionDetails);
-                return "User " + TransactionType.REJECTED;
+                return "User Amount =>" + TransactionStatus.REJECTED;
 
             default:
                 throw new CustomException(ErrorMessages.STATUS_ERROR);

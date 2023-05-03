@@ -1,5 +1,7 @@
 package com.nirmal.banking.controller;
 
+import com.nirmal.banking.dto.TransactionDecisionByAdmin;
+import com.nirmal.banking.dto.KycStatusApprovalByAdmin;
 import com.nirmal.banking.dto.UserDetailsDto;
 import com.nirmal.banking.exception.CustomException;
 import com.nirmal.banking.service.AdminService;
@@ -44,39 +46,38 @@ public class AdminController {
     }
 
     @PutMapping(DEPOSIT_DECISION)
-    private ResponseEntity<?> depositApprove(@PathVariable("transaction-id") String transactionId,
-                                             @PathVariable("decision") String decision) {
+    private ResponseEntity<?> depositApprove(@RequestBody TransactionDecisionByAdmin transactionDecisionByAdmin) {
         try {
-            KycStatus kycStatus = KycStatus.valueOf(decision.toUpperCase());
+            KycStatus kycStatus = KycStatus.valueOf(transactionDecisionByAdmin.getDecision().toUpperCase());
         } catch (Exception exception) {
             throw new CustomException(STATUS_ERROR);
         }
-        return ResponseEntity.ok(adminService.depositApprove(transactionId, decision));
+        return ResponseEntity.ok(adminService.depositApprove(transactionDecisionByAdmin.getTransactionId(),
+                transactionDecisionByAdmin.getDecision()));
     }
 
     @PutMapping(WITHDRAW_DECISION)
-    private ResponseEntity<?> withdrawApprove(@PathVariable("transaction-id") String transactionId,
-                                              @PathVariable("decision") String decision) {
+    private ResponseEntity<?> withdrawApprove(@RequestBody TransactionDecisionByAdmin transactionDecisionByAdmin) {
         try {
-            KycStatus kycStatus = KycStatus.valueOf(decision.toUpperCase());
+            KycStatus kycStatus = KycStatus.valueOf(transactionDecisionByAdmin.getDecision().toUpperCase());
         } catch (Exception exception) {
             throw new CustomException(STATUS_ERROR);
         }
-        return ResponseEntity.ok(adminService.withdrawApprove(transactionId, decision));
+        return ResponseEntity.ok(adminService.withdrawApprove(transactionDecisionByAdmin.getTransactionId(),
+                transactionDecisionByAdmin.getDecision()));
     }
 
     @PutMapping(VALIDATE_KYC)
-    private ResponseEntity<?> approved(@PathVariable("uid") String uid,
-                                       @PathVariable("decision") String status) {
+    private ResponseEntity<?> approved(@RequestBody KycStatusApprovalByAdmin kycStatusApprovalByAdmin) {
         try {
-            KycStatus kycStatus = KycStatus.valueOf(status.toUpperCase());
+            KycStatus kycStatus = KycStatus.valueOf(kycStatusApprovalByAdmin.getStatus().toUpperCase());
         } catch (Exception exception) {
             throw new CustomException(STATUS_ERROR);
         }
-        return ResponseEntity.ok(adminService.approvedRejected(uid, status));
+        return ResponseEntity.ok(adminService.approvedRejected(kycStatusApprovalByAdmin.getUid(), kycStatusApprovalByAdmin.getStatus()));
     }
 
-    @PostMapping(WITHDRAW_INTEREST_PERCENTAGE)
+    @PostMapping(WITHDRAW_FEE_PERCENTAGE)
     private ResponseEntity<?> withdrawInterestPercentage(@RequestBody String interest) {
         return ResponseEntity.ok(adminSettingsService.withdrawInterestPercentage(Double.parseDouble(interest)));
     }

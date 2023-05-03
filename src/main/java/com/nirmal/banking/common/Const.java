@@ -18,7 +18,7 @@ public class Const {
 
     public static final String DOWNLOAD_IMAGES = "/download-images/{uid}";
 
-    public static final String VALIDATE_KYC = "/decision-status/{uid}/{decision}";
+    public static final String VALIDATE_KYC = "/decision-status";
 
     public static final String LOGIN = "/login";
 
@@ -36,9 +36,10 @@ public class Const {
 
     public static final String WITHDRAW_PENDING = "/withdraw-pending";
 
-    public static final String DEPOSIT_DECISION = "/deposit-decision/{transaction-id}/{decision}";
+    public static final String DEPOSIT_DECISION = "/deposit-decision";
 
-    public static final String WITHDRAW_DECISION = "/withdraw-decision/{transaction-id}/{decision}";
-    public static final String WITHDRAW_INTEREST_PERCENTAGE = "/withdraw-interest-percentage";
+    public static final String WITHDRAW_DECISION = "/withdraw-decision";
+
+    public static final String WITHDRAW_FEE_PERCENTAGE = "/withdraw-fee-percentage";
 
 }
