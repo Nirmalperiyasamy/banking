@@ -79,7 +79,6 @@ public class AdminService {
         switch (kycstatus) {
             case APPROVED:
                 transactionDetails.setTransactionStatus(TransactionStatus.APPROVED);
-                transactionRepo.save(transactionDetails);
                 transactionDetails.setTotalAmount(totalAmount(transactionDetails.getUid()) + transactionDetails.getAmount());
                 transactionRepo.save(transactionDetails);
                 return "User Amount => " + TransactionType.DEPOSIT;
@@ -96,10 +95,12 @@ public class AdminService {
 
     Double totalAmount(String uid) {
         // TODO: Need to move summation to SQL
-        return transactionRepo.totalAmount(uid).stream()
-                .mapToDouble(amountDetail -> amountDetail.getTransactionType() == TransactionType.DEPOSIT ?
-                        amountDetail.getAmount() : -amountDetail.getAmount())
-                .sum();
+        return transactionRepo.findAllByUidAndTransactionStatusNot(uid, TransactionStatus.REJECTED).stream()
+                .filter(details -> (details.getTransactionType() == TransactionType.DEPOSIT) && (details.getTransactionStatus() == TransactionStatus.APPROVED))
+                .mapToDouble(TransactionDetails::getAmount).sum() -
+                transactionRepo.findAllByUidAndTransactionStatusNot(uid, TransactionStatus.REJECTED).stream()
+                        .filter(details -> details.getTransactionType() == TransactionType.WITHDRAW)
+                        .mapToDouble(details -> details.getAmount() + details.getWithdrawFee()).sum();
     }
 
     public String withdrawApprove(String transactionId, String decision) {
@@ -108,7 +109,6 @@ public class AdminService {
         switch (kycstatus) {
             case APPROVED:
                 transactionDetails.setTransactionStatus(TransactionStatus.APPROVED);
-                transactionRepo.save(transactionDetails);
                 transactionDetails.setTotalAmount(totalAmount(transactionDetails.getUid()) - transactionDetails.getAmount() -
                         transactionDetails.getWithdrawFee());
                 transactionRepo.save(transactionDetails);

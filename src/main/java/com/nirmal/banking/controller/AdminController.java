@@ -1,12 +1,10 @@
 package com.nirmal.banking.controller;
 
-import com.nirmal.banking.dto.TransactionDecisionByAdmin;
 import com.nirmal.banking.dto.KycStatusApprovalByAdmin;
+import com.nirmal.banking.dto.TransactionDecisionByAdmin;
 import com.nirmal.banking.dto.UserDetailsDto;
-import com.nirmal.banking.exception.CustomException;
 import com.nirmal.banking.service.AdminService;
 import com.nirmal.banking.service.AdminSettingsService;
-import com.nirmal.banking.utils.KycStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 
 import static com.nirmal.banking.common.Const.*;
-import static com.nirmal.banking.common.ErrorMessages.STATUS_ERROR;
 
 @RestController
 @RequiredArgsConstructor
@@ -47,33 +44,18 @@ public class AdminController {
 
     @PutMapping(DEPOSIT_DECISION)
     private ResponseEntity<?> depositApprove(@RequestBody TransactionDecisionByAdmin transactionDecisionByAdmin) {
-        try {
-            KycStatus kycStatus = KycStatus.valueOf(transactionDecisionByAdmin.getDecision().toUpperCase());
-        } catch (Exception exception) {
-            throw new CustomException(STATUS_ERROR);
-        }
         return ResponseEntity.ok(adminService.depositApprove(transactionDecisionByAdmin.getTransactionId(),
                 transactionDecisionByAdmin.getDecision()));
     }
 
     @PutMapping(WITHDRAW_DECISION)
     private ResponseEntity<?> withdrawApprove(@RequestBody TransactionDecisionByAdmin transactionDecisionByAdmin) {
-        try {
-            KycStatus kycStatus = KycStatus.valueOf(transactionDecisionByAdmin.getDecision().toUpperCase());
-        } catch (Exception exception) {
-            throw new CustomException(STATUS_ERROR);
-        }
         return ResponseEntity.ok(adminService.withdrawApprove(transactionDecisionByAdmin.getTransactionId(),
                 transactionDecisionByAdmin.getDecision()));
     }
 
     @PutMapping(VALIDATE_KYC)
     private ResponseEntity<?> approved(@RequestBody KycStatusApprovalByAdmin kycStatusApprovalByAdmin) {
-        try {
-            KycStatus kycStatus = KycStatus.valueOf(kycStatusApprovalByAdmin.getStatus().toUpperCase());
-        } catch (Exception exception) {
-            throw new CustomException(STATUS_ERROR);
-        }
         return ResponseEntity.ok(adminService.approvedRejected(kycStatusApprovalByAdmin.getUid(), kycStatusApprovalByAdmin.getStatus()));
     }
 

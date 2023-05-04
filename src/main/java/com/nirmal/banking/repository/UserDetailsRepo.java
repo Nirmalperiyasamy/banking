@@ -16,5 +16,5 @@ public interface UserDetailsRepo extends JpaRepository<CustomUserDetails, Intege
 
     CustomUserDetails findByUid(String uid);
 
-    List<CustomUserDetails> findAllByKycStatus(KycStatus pending);
+    List<CustomUserDetails> findAllByKycStatus(KycStatus status);
 }

@@ -28,7 +28,7 @@ public class LoginController {
     private final JwtUtil jwtUtil;
 
     @PostMapping(LOGIN)
-    private ResponseEntity<?> token(@RequestBody UserDetailsDto userDetailsDto, HttpServletResponse response) {
+    private ResponseEntity<?> token(@RequestBody UserDetailsDto userDetailsDto) {
         try {
             String uid = userService.findByName(userDetailsDto.getUsername());
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(uid, userDetailsDto.getPassword()));

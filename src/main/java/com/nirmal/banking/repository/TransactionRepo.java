@@ -15,18 +15,9 @@ public interface TransactionRepo extends JpaRepository<TransactionDetails, Integ
 
     boolean existsByUid(String uid);
 
-    @Query("SELECT new com.nirmal.banking.dao.TransactionDetails( custom.amount, custom.transactionType,custom.transactionStatus) " +
-            "FROM TransactionDetails custom WHERE custom.uid = :uid AND custom.transactionStatus != 'REJECTED'")
-    List<TransactionDetails> totalAmount(@Param("uid") String uid);
-
     List<TransactionDetails> findAllByTransactionStatus(TransactionStatus transactionStatus);
 
-    // TODO : Need to move summation to SQL
-//    @Query("SELECT sum(custom.amount) FROM TransactionDetails custom WHERE custom.uid = :uid AND (custom.transactionType = :deposit) AND (custom.transactionStatus = :transactionStatus)")
-//    Double depositTotalAmount(@Param("uid") String uid, @Param("deposit") TransactionType transactionType, @Param("transactionStatus") TransactionStatus transactionStatus);
-//
-//    @Query(value = "SELECT sum(CASE WHEN txn.amount IS NOT NULL THEN txn.amount ELSE 0 END) FROM transaction_details txn WHERE txn.uid = :uid AND txn.transaction_type = :txnType AND txn.transaction_status = :approved OR txn.transaction_status = :pending", nativeQuery = true)
-//    Double withdrawTotalAmount(@Param("uid") String uid, @Param("txnType") TransactionType txnType, @Param("approved") TransactionStatus approved, @Param("pending") TransactionStatus pending);
+    List<TransactionDetails> findAllByUidAndTransactionStatusNot(String uid,TransactionStatus status);
 
     TransactionDetails findByTransactionId(String transactionId);
 }

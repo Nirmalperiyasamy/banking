@@ -78,8 +78,7 @@ public class UserService implements UserDetailsService {
         return userDetailsDto;
     }
 
-    public String uploadImage(MultipartFile[] file, HttpServletRequest request) throws IOException {
-        String uid = extractUid(request);
+    public String uploadImage(MultipartFile[] file, String uid) throws IOException {
         String filePath = fileStoragePath + File.separator + uid;
         File folder = new File(filePath);
         folder.mkdir();
@@ -92,8 +91,7 @@ public class UserService implements UserDetailsService {
         return SuccessMessages.UPLOADED;
     }
 
-    public String depositAmount(HttpServletRequest request, Integer depositAmount) {
-        String uid = extractUid(request);
+    public String depositAmount(String uid, Integer depositAmount) {
         CustomUserDetails customUserDetails = userDetailsRepo.findByUid(uid);
 
         //Verifying the user is approved by The Admin.
@@ -110,7 +108,7 @@ public class UserService implements UserDetailsService {
         transactionDetails.setAmount(depositAmount);
         transactionDetails.setTotalAmount(totalAmount(uid) + depositAmount);
         transactionDetails.setTransactionType(TransactionType.DEPOSIT);
-        transactionDetails.setTransactionStatus(TransactionStatus.APPROVED);
+        transactionDetails.setTransactionStatus(TransactionStatus.PENDING);
         transactionDetails.setInitiatedAt(System.currentTimeMillis());
         transactionDetails.setWithdrawFeePercentage(0D);
         transactionDetails.setWithdrawFee(0D);
@@ -118,8 +116,7 @@ public class UserService implements UserDetailsService {
         return depositAmount + SuccessMessages.AMOUNT_CREDITED;
     }
 
-    public String withdrawAmount(HttpServletRequest request, Integer debitedAmount) {
-        String uid = extractUid(request);
+    public String withdrawAmount(String uid, Integer debitedAmount) {
         CustomUserDetails customUserDetails = userDetailsRepo.findByUid(uid);
 
         if (!customUserDetails.getKycStatus().equals(KycStatus.APPROVED))
@@ -156,21 +153,16 @@ public class UserService implements UserDetailsService {
 
     Double totalAmount(String uid) {
         // TODO: Need to move summation to SQL
-        return transactionRepo.totalAmount(uid).stream()
-                .mapToDouble(amountDetail -> amountDetail.getTransactionType() == TransactionType.DEPOSIT ?
-                        amountDetail.getAmount() : -amountDetail.getAmount())
-                .sum();
+        return transactionRepo.findAllByUidAndTransactionStatusNot(uid, TransactionStatus.REJECTED).stream()
+                .filter(details -> (details.getTransactionType() == TransactionType.DEPOSIT) && (details.getTransactionStatus() == TransactionStatus.APPROVED))
+                .mapToDouble(TransactionDetails::getAmount).sum() -
+                transactionRepo.findAllByUidAndTransactionStatusNot(uid, TransactionStatus.REJECTED).stream()
+                        .filter(details -> details.getTransactionType() == TransactionType.WITHDRAW)
+                        .mapToDouble(details -> details.getAmount() + details.getWithdrawFee()).sum();
     }
 
-    public Double amountBalance(HttpServletRequest request) {
-        String uid = extractUid(request);
+    public Double amountBalance(String uid) {
         return totalAmount(uid);
-    }
-
-    private String extractUid(HttpServletRequest request) {
-        String authorizationHeader = request.getHeader("Authorization");
-        authorizationHeader = authorizationHeader.replace("Bearer", "");
-        return jwtUtil.extractUsername(authorizationHeader.trim());
     }
 
     void convertMultipartFileToFile(MultipartFile[] multipartFiles, String filePath) throws IOException {
@@ -194,8 +186,7 @@ public class UserService implements UserDetailsService {
         return userDetailsRepo.existsByUsername(username);
     }
 
-    public String addBankDetails(UserBankDetailsDto userBankDetailsDto, HttpServletRequest request) {
-        String uid = extractUid(request);
+    public String addBankDetails(UserBankDetailsDto userBankDetailsDto, String uid) {
         UserBankDetails userBankDetails = new UserBankDetails();
         userBankDetails.setUid(uid);
         userBankDetails.setIfscCode(userBankDetailsDto.getIfscCode());
