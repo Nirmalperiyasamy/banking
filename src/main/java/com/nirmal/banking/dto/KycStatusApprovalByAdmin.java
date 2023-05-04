@@ -1,5 +1,6 @@
 package com.nirmal.banking.dto;
 
+import com.nirmal.banking.utils.KycStatus;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -13,5 +14,5 @@ public class KycStatusApprovalByAdmin {
 
     String uid;
 
-    String status;
+    KycStatus status;
 }

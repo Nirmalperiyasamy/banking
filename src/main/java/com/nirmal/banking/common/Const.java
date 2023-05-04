@@ -32,9 +32,7 @@ public class Const {
 
     public static final String PENDING_KYC = "/pending-kyc";
 
-    public static final String DEPOSIT_PENDING = "/deposit-pending";
-
-    public static final String WITHDRAW_PENDING = "/withdraw-pending";
+    public static final String TRANSACTION_PENDING = "/transaction-pending";
 
     public static final String DEPOSIT_DECISION = "/deposit-decision";
 

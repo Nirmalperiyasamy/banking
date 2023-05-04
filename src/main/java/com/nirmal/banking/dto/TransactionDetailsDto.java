@@ -15,6 +15,6 @@ public class TransactionDetailsDto {
 
     private String uid;
 
-    private Integer amount;
+    private Double amount;
 
 }

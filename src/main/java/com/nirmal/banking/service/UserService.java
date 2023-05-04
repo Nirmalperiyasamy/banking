@@ -10,6 +10,7 @@ import com.nirmal.banking.dto.UserBankDetailsDto;
 import com.nirmal.banking.dto.UserDetailsDto;
 import com.nirmal.banking.exception.CustomException;
 import com.nirmal.banking.interceptor.JwtUtil;
+import com.nirmal.banking.recipt.WithdrawRecipt;
 import com.nirmal.banking.repository.AdminSettingsRepo;
 import com.nirmal.banking.repository.TransactionRepo;
 import com.nirmal.banking.repository.UserBankDetailsRepo;
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.parameters.P;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -91,7 +93,7 @@ public class UserService implements UserDetailsService {
         return SuccessMessages.UPLOADED;
     }
 
-    public String depositAmount(String uid, Integer depositAmount) {
+    public String depositAmount(String uid, Double depositAmount) {
         CustomUserDetails customUserDetails = userDetailsRepo.findByUid(uid);
 
         //Verifying the user is approved by The Admin.
@@ -102,21 +104,22 @@ public class UserService implements UserDetailsService {
         if (!transactionRepo.existsByUid(uid))
             if (depositAmount < 1000) throw new CustomException(ErrorMessages.MINIMUM_DEPOSIT_AMOUNT);
 
-        TransactionDetails transactionDetails = new TransactionDetails();
-        transactionDetails.setUid(uid);
-        transactionDetails.setTransactionId(UUID.randomUUID().toString());
-        transactionDetails.setAmount(depositAmount);
-        transactionDetails.setTotalAmount(totalAmount(uid) + depositAmount);
-        transactionDetails.setTransactionType(TransactionType.DEPOSIT);
-        transactionDetails.setTransactionStatus(TransactionStatus.PENDING);
-        transactionDetails.setInitiatedAt(System.currentTimeMillis());
-        transactionDetails.setWithdrawFeePercentage(0D);
-        transactionDetails.setWithdrawFee(0D);
+        TransactionDetails transactionDetails = TransactionDetails.builder()
+                .uid(uid)
+                .amount(depositAmount)
+                .transactionId(UUID.randomUUID().toString())
+                .initiatedAt(System.currentTimeMillis())
+                .transactionType(TransactionType.DEPOSIT)
+                .transactionStatus(TransactionStatus.PENDING)
+                .totalAmount(totalAmount(uid) + depositAmount)
+                .withdrawFee(0D)
+                .withdrawFeePercentage(0D)
+                .build();
         transactionRepo.save(transactionDetails);
         return depositAmount + SuccessMessages.AMOUNT_CREDITED;
     }
 
-    public String withdrawAmount(String uid, Integer debitedAmount) {
+    public WithdrawRecipt withdrawAmount(String uid, Double debitedAmount) {
         CustomUserDetails customUserDetails = userDetailsRepo.findByUid(uid);
 
         if (!customUserDetails.getKycStatus().equals(KycStatus.APPROVED))
@@ -125,40 +128,50 @@ public class UserService implements UserDetailsService {
         if (debitedAmount > totalAmount(uid))
             throw new CustomException(ErrorMessages.INSUFFICIENT_BALANCE);
 
-        TransactionDetails transactionDetails = new TransactionDetails();
-        transactionDetails.setUid(uid);
-        transactionDetails.setTransactionId(UUID.randomUUID().toString());
-        transactionDetails.setAmount(debitedAmount);
-        transactionDetails.setTotalAmount(totalAmount(uid) - debitedAmount - WithdrawFeeAmount(debitedAmount));
-        transactionDetails.setTransactionType(TransactionType.WITHDRAW);
-        transactionDetails.setTransactionStatus(TransactionStatus.PENDING);
-        transactionDetails.setInitiatedAt(System.currentTimeMillis());
-        transactionDetails.setWithdrawFeePercentage(withdrawFeePercentage());
-        transactionDetails.setWithdrawFee(WithdrawFeeAmount(debitedAmount));
+        TransactionDetails transactionDetails = TransactionDetails.builder()
+                .uid(uid)
+                .amount(debitedAmount)
+                .transactionId(UUID.randomUUID().toString())
+                .initiatedAt(System.currentTimeMillis())
+                .transactionType(TransactionType.WITHDRAW)
+                .transactionStatus(TransactionStatus.PENDING)
+                .totalAmount(totalAmount(uid) - debitedAmount - withdrawFeeAmount((debitedAmount)))
+                .withdrawFee(withdrawFeeAmount(debitedAmount))
+                .withdrawFeePercentage(withdrawFeePercentage())
+                .build();
         transactionRepo.save(transactionDetails);
-        return debitedAmount - WithdrawFeeAmount(debitedAmount) + SuccessMessages.AMOUNT_DEBITED
-                + withdrawFeePercentage() + SuccessMessages.WITHDRAW_FEE_PERCENTAGE
-                + WithdrawFeeAmount(debitedAmount) + SuccessMessages.WITHDRAW_FEE_AMOUNT;
+        return new WithdrawRecipt(debitedAmount - withdrawFeeAmount(debitedAmount), withdrawFeePercentage(), +withdrawFeeAmount(debitedAmount));
     }
 
 
     private Double withdrawFeePercentage() {
         Optional<AdminSettings> adminService = adminSettingsRepo.findById(1);
+        if (adminService.isEmpty()) throw new CustomException(ErrorMessages.WITHDRAW_FEE_ERROR);
         return adminService.get().getWithdrawFeePercentage();
     }
 
-    private Double WithdrawFeeAmount(Integer debitedAmount) {
-        return (debitedAmount * (withdrawFeePercentage() / 100));
+    private Double withdrawFeeAmount(Double debitedAmount) {
+        return percentageCalculator(debitedAmount, withdrawFeePercentage());
+    }
+
+    private Double percentageCalculator(Double debitedAmount, Double withdrawFeePercentage) {
+        return debitedAmount * (withdrawFeePercentage / 100);
+
     }
 
     Double totalAmount(String uid) {
         // TODO: Need to move summation to SQL
         return transactionRepo.findAllByUidAndTransactionStatusNot(uid, TransactionStatus.REJECTED).stream()
-                .filter(details -> (details.getTransactionType() == TransactionType.DEPOSIT) && (details.getTransactionStatus() == TransactionStatus.APPROVED))
-                .mapToDouble(TransactionDetails::getAmount).sum() -
-                transactionRepo.findAllByUidAndTransactionStatusNot(uid, TransactionStatus.REJECTED).stream()
-                        .filter(details -> details.getTransactionType() == TransactionType.WITHDRAW)
-                        .mapToDouble(details -> details.getAmount() + details.getWithdrawFee()).sum();
+                .map(details -> {
+                    if ((details.getTransactionType() == TransactionType.DEPOSIT) && (details.getTransactionStatus() == TransactionStatus.APPROVED)) {
+                        return details.getAmount();
+                    } else if (details.getTransactionType() == TransactionType.WITHDRAW) {
+                        return -details.getAmount() - details.getWithdrawFee();
+                    }
+                    return 0.0;
+                }).reduce(0.0, Double::sum);
+
+
     }
 
     public Double amountBalance(String uid) {
@@ -187,11 +200,12 @@ public class UserService implements UserDetailsService {
     }
 
     public String addBankDetails(UserBankDetailsDto userBankDetailsDto, String uid) {
-        UserBankDetails userBankDetails = new UserBankDetails();
-        userBankDetails.setUid(uid);
-        userBankDetails.setIfscCode(userBankDetailsDto.getIfscCode());
-        userBankDetails.setAccountNumber(userBankDetailsDto.getAccountNumber());
-        userBankDetails.setInitiatedAt(System.currentTimeMillis());
+        UserBankDetails userBankDetails = UserBankDetails.builder()
+                .uid(uid)
+                .ifscCode(userBankDetailsDto.getIfscCode())
+                .accountNumber(userBankDetailsDto.getAccountNumber())
+                .initiatedAt(System.currentTimeMillis())
+                .build();
         userBankDetailsRepo.save(userBankDetails);
         return SuccessMessages.BANK_ACCOUNT_ADDED;
     }

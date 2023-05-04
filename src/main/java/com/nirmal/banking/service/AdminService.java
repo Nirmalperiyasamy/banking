@@ -40,11 +40,10 @@ public class AdminService {
         return customUserDetails;
     }
 
-    public String approvedRejected(String uid, String status) {
-        KycStatus kycstatus = KycStatus.valueOf(status.toUpperCase());
+    public String approvedRejected(String uid, KycStatus kycStatus) {
         CustomUserDetails customUserDetails = userDetailsRepo.findByUid(uid);
 
-        switch (kycstatus) {
+        switch (kycStatus) {
             case APPROVED:
                 customUserDetails.setKycStatus(KycStatus.APPROVED);
                 userDetailsRepo.save(customUserDetails);
@@ -65,18 +64,13 @@ public class AdminService {
         return userDetailsRepo.findAllByKycStatus(KycStatus.PENDING);
     }
 
-    public List<TransactionDetails> depositPending() {
+    public List<TransactionDetails> transactionPending() {
         return transactionRepo.findAllByTransactionStatus(TransactionStatus.PENDING);
     }
 
-    public List<TransactionDetails> withdrawPending() {
-        return transactionRepo.findAllByTransactionStatus(TransactionStatus.PENDING);
-    }
-
-    public String depositApprove(String transactionId, String decision) {
-        KycStatus kycstatus = KycStatus.valueOf(decision.toUpperCase());
+    public String depositApprove(String transactionId, TransactionStatus transactionStatus) {
         TransactionDetails transactionDetails = transactionRepo.findByTransactionId(transactionId);
-        switch (kycstatus) {
+        switch (transactionStatus) {
             case APPROVED:
                 transactionDetails.setTransactionStatus(TransactionStatus.APPROVED);
                 transactionDetails.setTotalAmount(totalAmount(transactionDetails.getUid()) + transactionDetails.getAmount());
@@ -96,17 +90,19 @@ public class AdminService {
     Double totalAmount(String uid) {
         // TODO: Need to move summation to SQL
         return transactionRepo.findAllByUidAndTransactionStatusNot(uid, TransactionStatus.REJECTED).stream()
-                .filter(details -> (details.getTransactionType() == TransactionType.DEPOSIT) && (details.getTransactionStatus() == TransactionStatus.APPROVED))
-                .mapToDouble(TransactionDetails::getAmount).sum() -
-                transactionRepo.findAllByUidAndTransactionStatusNot(uid, TransactionStatus.REJECTED).stream()
-                        .filter(details -> details.getTransactionType() == TransactionType.WITHDRAW)
-                        .mapToDouble(details -> details.getAmount() + details.getWithdrawFee()).sum();
+                .map(details -> {
+                    if ((details.getTransactionType() == TransactionType.DEPOSIT) && (details.getTransactionStatus() == TransactionStatus.APPROVED)) {
+                        return details.getAmount();
+                    } else if (details.getTransactionType() == TransactionType.WITHDRAW) {
+                        return -details.getAmount() - details.getWithdrawFee();
+                    }
+                    return 0.0;
+                }).reduce(0.0, Double::sum);
     }
 
-    public String withdrawApprove(String transactionId, String decision) {
-        KycStatus kycstatus = KycStatus.valueOf(decision.toUpperCase());
+    public String withdrawApprove(String transactionId, TransactionStatus kycStatus) {
         TransactionDetails transactionDetails = transactionRepo.findByTransactionId(transactionId);
-        switch (kycstatus) {
+        switch (kycStatus) {
             case APPROVED:
                 transactionDetails.setTransactionStatus(TransactionStatus.APPROVED);
                 transactionDetails.setTotalAmount(totalAmount(transactionDetails.getUid()) - transactionDetails.getAmount() -

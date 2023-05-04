@@ -32,14 +32,9 @@ public class AdminController {
         return ResponseEntity.ok(adminService.pendingKyc());
     }
 
-    @GetMapping(DEPOSIT_PENDING)
+    @GetMapping(TRANSACTION_PENDING)
     private ResponseEntity<?> depositPending() {
-        return ResponseEntity.ok(adminService.depositPending());
-    }
-
-    @GetMapping(WITHDRAW_PENDING)
-    private ResponseEntity<?> withdrawPending() {
-        return ResponseEntity.ok(adminService.withdrawPending());
+        return ResponseEntity.ok(adminService.transactionPending());
     }
 
     @PutMapping(DEPOSIT_DECISION)

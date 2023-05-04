@@ -23,5 +23,6 @@ public class ErrorMessages {
             "like adding some extra words to your name";
     public static final String BANK_ACCOUNT_NUMBER = "Enter valid account number";
     public static final String IFSC_CODE = "Enter valid IFSC code";
+    public static final String WITHDRAW_FEE_ERROR = "Error in withdraw fee percentage";
 
 }

@@ -2,9 +2,7 @@ package com.nirmal.banking.dao;
 
 import com.nirmal.banking.utils.TransactionStatus;
 import com.nirmal.banking.utils.TransactionType;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import javax.persistence.*;
 
@@ -12,7 +10,9 @@ import javax.persistence.*;
 @Table
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class TransactionDetails {
 
     @Id
@@ -23,7 +23,7 @@ public class TransactionDetails {
 
     private String transactionId;
 
-    private Integer amount;
+    private Double amount;
 
     @Enumerated(EnumType.STRING)
     private TransactionType transactionType;
@@ -39,7 +39,7 @@ public class TransactionDetails {
 
     private Double withdrawFee;
 
-    public TransactionDetails(Integer amount, TransactionType transactionType, TransactionStatus transactionStatus) {
+    public TransactionDetails(Double amount, TransactionType transactionType, TransactionStatus transactionStatus) {
         this.amount = amount;
         this.transactionType = transactionType;
         this.transactionStatus = transactionStatus;
