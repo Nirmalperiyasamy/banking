@@ -18,14 +18,26 @@ public class Const {
 
     public static final String DOWNLOAD_IMAGES = "/download-images/{uid}";
 
-    public static final String VALIDATE_KYC = "/decision-status/{uid}/{decision}";
+    public static final String VALIDATE_KYC = "/decision-status";
 
     public static final String LOGIN = "/login";
 
     public static final String WITHDRAW = "/withdraw";
 
-    public static final String BALANCE  ="/balance";
+    public static final String BALANCE = "/balance";
 
     public static final String DEPOSIT = "/deposit";
+
+    public static final String ADD_BANK_DETAILS = "/add-bank";
+
+    public static final String PENDING_KYC = "/pending-kyc";
+
+    public static final String TRANSACTION_PENDING = "/transaction-pending";
+
+    public static final String DEPOSIT_DECISION = "/deposit-decision";
+
+    public static final String WITHDRAW_DECISION = "/withdraw-decision";
+
+    public static final String WITHDRAW_FEE_PERCENTAGE = "/withdraw-fee-percentage";
 
 }

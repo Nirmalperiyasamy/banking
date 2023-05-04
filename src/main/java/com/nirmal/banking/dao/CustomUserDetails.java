@@ -2,6 +2,7 @@ package com.nirmal.banking.dao;
 
 import com.nirmal.banking.utils.Gender;
 import com.nirmal.banking.utils.KycStatus;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -39,4 +40,6 @@ public class CustomUserDetails {
 
     @OneToOne
     private UserRole userRole;
+
+    private Long initiatedAt;
 }

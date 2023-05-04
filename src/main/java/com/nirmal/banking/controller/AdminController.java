@@ -1,18 +1,17 @@
 package com.nirmal.banking.controller;
 
+import com.nirmal.banking.dto.KycStatusApprovalByAdmin;
+import com.nirmal.banking.dto.TransactionDecisionByAdmin;
 import com.nirmal.banking.dto.UserDetailsDto;
-import com.nirmal.banking.exception.CustomException;
 import com.nirmal.banking.service.AdminService;
-import com.nirmal.banking.utils.KycStatus;
+import com.nirmal.banking.service.AdminSettingsService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 
 import static com.nirmal.banking.common.Const.*;
-import static com.nirmal.banking.common.ErrorMessages.STATUS_ERROR;
 
 @RestController
 @RequiredArgsConstructor
@@ -21,19 +20,42 @@ public class AdminController {
 
     private final AdminService adminService;
 
+    private final AdminSettingsService adminSettingsService;
+
     @PostMapping(ADD_MANAGER)
     private ResponseEntity<?> addManager(@Valid @RequestBody UserDetailsDto userDetailsDto) {
         return ResponseEntity.ok(adminService.addManager(userDetailsDto));
     }
 
-    @GetMapping(VALIDATE_KYC)
-    private ResponseEntity<?> approved(@PathVariable("uid") String uid,
-                                       @PathVariable("decision") String status) {
-        try {
-            KycStatus kycStatus = KycStatus.valueOf(status.toUpperCase());
-        } catch (Exception exception) {
-            throw new CustomException(STATUS_ERROR);
-        }
-        return ResponseEntity.ok(adminService.approvedRejected(uid, status));
+    @GetMapping(PENDING_KYC)
+    private ResponseEntity<?> pendingKyc() {
+        return ResponseEntity.ok(adminService.pendingKyc());
+    }
+
+    @GetMapping(TRANSACTION_PENDING)
+    private ResponseEntity<?> depositPending() {
+        return ResponseEntity.ok(adminService.transactionPending());
+    }
+
+    @PutMapping(DEPOSIT_DECISION)
+    private ResponseEntity<?> depositApprove(@RequestBody TransactionDecisionByAdmin transactionDecisionByAdmin) {
+        return ResponseEntity.ok(adminService.depositApprove(transactionDecisionByAdmin.getTransactionId(),
+                transactionDecisionByAdmin.getDecision()));
+    }
+
+    @PutMapping(WITHDRAW_DECISION)
+    private ResponseEntity<?> withdrawApprove(@RequestBody TransactionDecisionByAdmin transactionDecisionByAdmin) {
+        return ResponseEntity.ok(adminService.withdrawApprove(transactionDecisionByAdmin.getTransactionId(),
+                transactionDecisionByAdmin.getDecision()));
+    }
+
+    @PutMapping(VALIDATE_KYC)
+    private ResponseEntity<?> approved(@RequestBody KycStatusApprovalByAdmin kycStatusApprovalByAdmin) {
+        return ResponseEntity.ok(adminService.approvedRejected(kycStatusApprovalByAdmin.getUid(), kycStatusApprovalByAdmin.getStatus()));
+    }
+
+    @PostMapping(WITHDRAW_FEE_PERCENTAGE)
+    private ResponseEntity<?> withdrawInterestPercentage(@RequestBody String interest) {
+        return ResponseEntity.ok(adminSettingsService.withdrawInterestPercentage(Double.parseDouble(interest)));
     }
 }

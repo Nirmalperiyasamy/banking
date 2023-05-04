@@ -1,5 +1,6 @@
 package com.nirmal.banking.dto;
 
+import com.nirmal.banking.utils.TransactionStatus;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -9,12 +10,9 @@ import lombok.Setter;
 @Getter
 @Setter
 @Builder
-public class TransactionDetailsDto {
+public class TransactionDecisionByAdmin {
 
-    private Integer id;
+    String transactionId;
 
-    private String uid;
-
-    private Double amount;
-
+    TransactionStatus decision;
 }

@@ -1,5 +1,6 @@
 package com.nirmal.banking.dto;
 
+import com.nirmal.banking.utils.KycStatus;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -9,12 +10,9 @@ import lombok.Setter;
 @Getter
 @Setter
 @Builder
-public class TransactionDetailsDto {
+public class KycStatusApprovalByAdmin {
 
-    private Integer id;
+    String uid;
 
-    private String uid;
-
-    private Double amount;
-
+    KycStatus status;
 }

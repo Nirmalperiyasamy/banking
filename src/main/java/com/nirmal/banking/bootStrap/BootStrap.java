@@ -49,6 +49,6 @@ public class BootStrap {
     }
 
     private boolean isUsernameExist() {
-        return userDetailsRepo.existsByusername("Nirmal");
+        return userDetailsRepo.existsByUsername("Nirmal");
     }
 }

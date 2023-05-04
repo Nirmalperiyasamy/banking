@@ -1,6 +1,8 @@
 package com.nirmal.banking.repository;
 
 import com.nirmal.banking.dao.TransactionDetails;
+import com.nirmal.banking.utils.TransactionStatus;
+import com.nirmal.banking.utils.TransactionType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,7 +15,9 @@ public interface TransactionRepo extends JpaRepository<TransactionDetails, Integ
 
     boolean existsByUid(String uid);
 
-    @Query("SELECT new com.nirmal.banking.dao.TransactionDetails( custom.amount, custom.transactionType) " +
-            "FROM TransactionDetails custom WHERE custom.uid = :uid")
-    List<TransactionDetails> totalAmount(@Param("uid") String uid);
+    List<TransactionDetails> findAllByTransactionStatus(TransactionStatus transactionStatus);
+
+    List<TransactionDetails> findAllByUidAndTransactionStatusNot(String uid,TransactionStatus status);
+
+    TransactionDetails findByTransactionId(String transactionId);
 }
