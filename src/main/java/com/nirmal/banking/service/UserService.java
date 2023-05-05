@@ -2,20 +2,19 @@ package com.nirmal.banking.service;
 
 import com.nirmal.banking.common.ErrorMessages;
 import com.nirmal.banking.common.SuccessMessages;
-import com.nirmal.banking.dao.AdminSettings;
 import com.nirmal.banking.dao.CustomUserDetails;
 import com.nirmal.banking.dao.TransactionDetails;
 import com.nirmal.banking.dao.UserBankDetails;
+import com.nirmal.banking.dto.EPassbook;
 import com.nirmal.banking.dto.UserBankDetailsDto;
 import com.nirmal.banking.dto.UserDetailsDto;
 import com.nirmal.banking.exception.CustomException;
-import com.nirmal.banking.interceptor.JwtUtil;
+import com.nirmal.banking.pojo.PaginationDetails;
 import com.nirmal.banking.recipt.WithdrawReceipt;
 import com.nirmal.banking.repository.AdminSettingsRepo;
 import com.nirmal.banking.repository.TransactionRepo;
 import com.nirmal.banking.repository.UserBankDetailsRepo;
 import com.nirmal.banking.repository.UserDetailsRepo;
-import com.nirmal.banking.response.CustomResponse;
 import com.nirmal.banking.utils.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
@@ -23,7 +22,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -35,7 +33,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -51,7 +50,7 @@ public class UserService implements UserDetailsService {
 
     private final PasswordEncoder passwordEncoder;
 
-    private final JwtUtil jwtUtil;
+    private final AdminSettingsService adminSettingsService;
 
     private final RoleService roleService;
 
@@ -65,7 +64,7 @@ public class UserService implements UserDetailsService {
         return new User(details.getUid(), details.getPassword(), authorities);
     }
 
-    public CustomResponse<UserDetailsDto> addUser(UserDetailsDto userDetailsDto) {
+    public UserDetailsDto addUser(UserDetailsDto userDetailsDto) {
         if (userExist(userDetailsDto.getUsername())) {
             throw new CustomException(ErrorMessages.USERNAME_EXIST);
         }
@@ -81,10 +80,10 @@ public class UserService implements UserDetailsService {
         userDetailsRepo.save(customUserDetails);
 
         BeanUtils.copyProperties(customUserDetails, userDetailsDto);
-        return new CustomResponse<>(HttpStatus.OK, CustomStatus.SUCCESS, userDetailsDto);
+        return userDetailsDto;
     }
 
-    public CustomResponse<String> uploadImage(MultipartFile[] file, String uid) throws IOException {
+    public String uploadImage(MultipartFile[] file, String uid) throws IOException {
         String filePath = fileStoragePath + File.separator + uid;
         File folder = new File(filePath);
         folder.mkdir();
@@ -94,10 +93,10 @@ public class UserService implements UserDetailsService {
         CustomUserDetails customUserDetails = userDetailsRepo.findByUid(uid);
         customUserDetails.setKycStatus(KycStatus.PENDING);
         userDetailsRepo.save(customUserDetails);
-        return new CustomResponse<>(HttpStatus.OK, CustomStatus.SUCCESS, SuccessMessages.UPLOADED);
+        return SuccessMessages.UPLOADED;
     }
 
-    public CustomResponse<String> depositAmount(String uid, Double depositAmount) {
+    public String depositAmount(String uid, Double depositAmount) {
         CustomUserDetails customUserDetails = userDetailsRepo.findByUid(uid);
 
         //Verifying the user is approved by The Admin.
@@ -120,22 +119,22 @@ public class UserService implements UserDetailsService {
                 .withdrawFeePercentage(0D)
                 .build();
         transactionRepo.save(transactionDetails);
-        return new CustomResponse<>(HttpStatus.OK, CustomStatus.SUCCESS, depositAmount + SuccessMessages.AMOUNT_CREDITED);
+        return depositAmount + SuccessMessages.AMOUNT_CREDITED;
     }
 
-    public CustomResponse<WithdrawReceipt> withdrawAmount(String uid, Double debitedAmount) {
+    public WithdrawReceipt withdrawAmount(String uid, Double debitedAmount) {
         CustomUserDetails customUserDetails = userDetailsRepo.findByUid(uid);
 
         if (!customUserDetails.getKycStatus().equals(KycStatus.APPROVED))
             throw new CustomException(ErrorMessages.KYC_NOT_APPROVED);
 
-        if (debitedAmount > adminSettingsRepo.findById(1).get().getWithdrawLimit())
+        if (debitedAmount > adminSettingsService.adminSettingsDetails().getWithdrawLimit())
             throw new CustomException(ErrorMessages.WITHDRAW_LIMIT_REACHED);
 
         if (debitedAmount > totalAmount(uid))
             throw new CustomException(ErrorMessages.INSUFFICIENT_BALANCE);
 
-        if (debitedAmount + withdrawLimitPerDay(uid) > adminSettingsRepo.findById(1).get().getWithdrawLimitPerDay())
+        if (debitedAmount + withdrawLimitPerDay(uid) > adminSettingsService.adminSettingsDetails().getWithdrawLimitPerDay())
             throw new CustomException(ErrorMessages.WITHDRAW_LIMIT_PER_DAY);
 
         TransactionDetails transactionDetails = TransactionDetails.builder()
@@ -150,16 +149,14 @@ public class UserService implements UserDetailsService {
                 .withdrawFeePercentage(withdrawFeePercentage())
                 .build();
         transactionRepo.save(transactionDetails);
-        return new CustomResponse<>(HttpStatus.OK, CustomStatus.SUCCESS, new WithdrawReceipt(
-                debitedAmount - withdrawFeeAmount(debitedAmount), withdrawFeePercentage()
-                , +withdrawFeeAmount(debitedAmount)));
+        return new WithdrawReceipt(
+                debitedAmount - withdrawFeeAmount(debitedAmount),
+                withdrawFeePercentage(),
+                +withdrawFeeAmount(debitedAmount));
     }
 
-
     private Double withdrawFeePercentage() {
-        Optional<AdminSettings> adminService = adminSettingsRepo.findById(1);
-        if (adminService.isEmpty()) throw new CustomException(ErrorMessages.WITHDRAW_FEE_ERROR);
-        return adminService.get().getWithdrawFeePercentage();
+        return adminSettingsService.adminSettingsDetails().getWithdrawFeePercentage();
     }
 
     private Double withdrawFeeAmount(Double debitedAmount) {
@@ -185,10 +182,9 @@ public class UserService implements UserDetailsService {
     }
 
     Double withdrawLimitPerDay(String uid) {
-        return transactionRepo.findAllByUidAndInitiatedAtBetweenAndTransactionStatusNot(uid
-                        , System.currentTimeMillis() - 86400000
-                        , System.currentTimeMillis()
-                        , TransactionStatus.REJECTED)
+        return transactionRepo.findAllByUidAndInitiatedAtBetweenAndTransactionStatusNot(uid,
+                        System.currentTimeMillis() - 86400000, System.currentTimeMillis(),
+                        TransactionStatus.REJECTED)
                 .stream()
                 .mapToDouble(details -> details.getTransactionType() == TransactionType.WITHDRAW ?
                         details.getAmount() : 0)
@@ -199,19 +195,16 @@ public class UserService implements UserDetailsService {
         return totalAmount(uid);
     }
 
-    public CustomResponse<Map<String, Object>> ePassbook(Long days, String uid) {
-        Long userSpecifiedDate = System.currentTimeMillis() - days * 86400000;
+    public PaginationDetails ePassbook(EPassbook ePassbook, String uid) {
         List<TransactionDetails> transactionDetailsList;
-        Pageable paging = PageRequest.of(0, 3);
-        Page<TransactionDetails> transactionDetailsPage = transactionRepo.findAllByUidAndInitiatedAtGreaterThanEqual(uid, userSpecifiedDate, paging);
+        Pageable paging = PageRequest.of(ePassbook.getPageNo(), ePassbook.getSize());
+        Page<TransactionDetails> transactionDetailsPage = transactionRepo.findAllByUidAndInitiatedAtBetween(uid, ePassbook.getDateFrom().getTime(),
+                ePassbook.getDateTo().getTime(), paging);
         transactionDetailsList = transactionDetailsPage.getContent();
-        Map<String, Object> response = new HashMap<>();
-        response.put("TransactionDetailsList", transactionDetailsList);
-        response.put("currentPage", transactionDetailsPage.getNumber());
-        response.put("totalItems", transactionDetailsPage.getTotalElements());
-        response.put("totalPages", transactionDetailsPage.getTotalPages());
 
-        return new CustomResponse<>(HttpStatus.OK, CustomStatus.SUCCESS, response);
+        return new PaginationDetails(transactionDetailsList, transactionDetailsPage.getNumber(),
+                transactionDetailsPage.getTotalElements(),
+                transactionDetailsPage.getTotalPages());
     }
 
     void convertMultipartFileToFile(MultipartFile[] multipartFiles, String filePath) throws IOException {

@@ -5,6 +5,7 @@ import com.nirmal.banking.dto.TransactionDetailsDto;
 import com.nirmal.banking.dto.UserBankDetailsDto;
 import com.nirmal.banking.dto.UserDetailsDto;
 import com.nirmal.banking.interceptor.JwtUtil;
+import com.nirmal.banking.response.CustomResponse;
 import com.nirmal.banking.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -27,38 +28,38 @@ public class UserController {
     private final JwtUtil jwtUtil;
 
     @PostMapping(ADD_USER)
-    private ResponseEntity<?> addUser(@Valid @RequestBody UserDetailsDto userDetailsDto) {
-        return ResponseEntity.ok(userService.addUser(userDetailsDto));
+    private CustomResponse<?> addUser(@Valid @RequestBody UserDetailsDto userDetailsDto) {
+        return CustomResponse.success(userService.addUser(userDetailsDto));
     }
 
     @PostMapping(DEPOSIT)
-    private ResponseEntity<?> deposit(@RequestBody TransactionDetailsDto transactionDetailsDto, HttpServletRequest request) {
-        return ResponseEntity.ok(userService.depositAmount(extractUid(request), transactionDetailsDto.getAmount()));
+    private CustomResponse<?> deposit(@RequestBody TransactionDetailsDto transactionDetailsDto, HttpServletRequest request) {
+        return CustomResponse.success(userService.depositAmount(extractUid(request), transactionDetailsDto.getAmount()));
     }
 
     @PostMapping(ADD_BANK_DETAILS)
-    private ResponseEntity<?> addBank(@Valid @RequestBody UserBankDetailsDto userBankDetailsDto, HttpServletRequest request) {
-        return ResponseEntity.ok(userService.addBankDetails(userBankDetailsDto, extractUid(request)));
+    private CustomResponse<?> addBank(@Valid @RequestBody UserBankDetailsDto userBankDetailsDto, HttpServletRequest request) {
+        return CustomResponse.success(userService.addBankDetails(userBankDetailsDto, extractUid(request)));
     }
 
     @PostMapping(WITHDRAW)
-    private ResponseEntity<?> debit(@RequestBody TransactionDetailsDto transactionDetailsDto, HttpServletRequest request) {
-        return ResponseEntity.ok(userService.withdrawAmount(extractUid(request), transactionDetailsDto.getAmount()));
+    private CustomResponse<?> debit(@RequestBody TransactionDetailsDto transactionDetailsDto, HttpServletRequest request) {
+        return CustomResponse.success(userService.withdrawAmount(extractUid(request), transactionDetailsDto.getAmount()));
     }
 
     @GetMapping(BALANCE)
-    private ResponseEntity<?> amountBalance(HttpServletRequest request) {
-        return ResponseEntity.ok(userService.amountBalance(extractUid(request)));
+    private CustomResponse<?> amountBalance(HttpServletRequest request) {
+        return CustomResponse.success(userService.amountBalance(extractUid(request)));
     }
 
     @GetMapping(E_PASSBOOK)
-    private ResponseEntity<?> ePassbook(@Valid @RequestBody EPassbook ePassbook, HttpServletRequest request) {
-        return ResponseEntity.ok(userService.ePassbook(ePassbook.getDays(), extractUid(request)));
+    private CustomResponse<?> ePassbook(@Valid @RequestBody EPassbook ePassbook, HttpServletRequest request) {
+        return CustomResponse.success(userService.ePassbook(ePassbook, extractUid(request)));
     }
 
     @PostMapping(UPLOAD_IMAGES)
-    private ResponseEntity<?> uploadImages(@RequestBody MultipartFile[] files, HttpServletRequest request) throws IOException {
-        return ResponseEntity.ok(userService.uploadImage(files, extractUid(request)));
+    private CustomResponse<?> uploadImages(@RequestBody MultipartFile[] files, HttpServletRequest request) throws IOException {
+        return CustomResponse.success(userService.uploadImage(files, extractUid(request)));
     }
 
     private String extractUid(HttpServletRequest request) {

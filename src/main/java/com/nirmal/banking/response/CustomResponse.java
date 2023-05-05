@@ -15,6 +15,17 @@ public class CustomResponse<T> {
 
     private T data;
 
+    public CustomResponse() {
+
+    }
+
+    public static <T> CustomResponse<T> success(T data) {
+        return new CustomResponse<>(HttpStatus.OK, CustomStatus.SUCCESS, data);
+    }
+
+    public static <T> CustomResponse<T> failure(T data) {
+        return new CustomResponse<>(HttpStatus.BAD_REQUEST, CustomStatus.FAILURE, data);
+    }
 
     public CustomResponse(HttpStatus httpStatus, CustomStatus customStatus, T data) {
         this.httpStatus = httpStatus;

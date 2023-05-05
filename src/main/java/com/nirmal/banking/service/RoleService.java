@@ -8,6 +8,8 @@ import com.nirmal.banking.utils.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class RoleService {
@@ -18,16 +20,22 @@ public class RoleService {
 
         switch (manager) {
             case ADMIN:
-                return roleRepo.findById(1).get();
+                return role(1);
 
             case MANAGER:
-                return roleRepo.findById(2).get();
+                return role(2);
 
             case USER:
-                return roleRepo.findById(3).get();
+                return role(3);
 
             default:
                 throw new CustomException(ErrorMessages.ROLE_NOT_FOUND);
         }
+    }
+
+    public UserRole role(Integer number) {
+        Optional<UserRole> userRole = roleRepo.findById(number);
+        if (userRole.isEmpty()) throw new CustomException(ErrorMessages.ROLE_NOT_FOUND);
+        return userRole.get();
     }
 }
