@@ -58,4 +58,9 @@ public class AdminController {
     private ResponseEntity<?> withdrawInterestPercentage(@RequestBody String interest) {
         return ResponseEntity.ok(adminSettingsService.withdrawInterestPercentage(Double.parseDouble(interest)));
     }
+
+    @PutMapping(WITHDRAW_LIMIT)
+    private ResponseEntity<?> withdrawLimit(@RequestBody String limit) {
+        return ResponseEntity.ok(adminSettingsService.withdrawLimit(Double.valueOf(limit)));
+    }
 }

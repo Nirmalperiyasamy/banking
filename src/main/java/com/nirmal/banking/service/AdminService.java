@@ -73,7 +73,7 @@ public class AdminService {
         switch (transactionStatus) {
             case APPROVED:
                 transactionDetails.setTransactionStatus(TransactionStatus.APPROVED);
-                transactionDetails.setTotalAmount(totalAmount(transactionDetails.getUid()) + transactionDetails.getAmount());
+                transactionDetails.setTotalAmount(totalAmount(transactionDetails.getUid()));
                 transactionRepo.save(transactionDetails);
                 return "User Amount => " + TransactionType.DEPOSIT;
 
@@ -105,8 +105,6 @@ public class AdminService {
         switch (kycStatus) {
             case APPROVED:
                 transactionDetails.setTransactionStatus(TransactionStatus.APPROVED);
-                transactionDetails.setTotalAmount(totalAmount(transactionDetails.getUid()) - transactionDetails.getAmount() -
-                        transactionDetails.getWithdrawFee());
                 transactionRepo.save(transactionDetails);
                 return "User Amount =>" + TransactionType.WITHDRAW;
 

@@ -18,7 +18,6 @@ public class AdminSettingsService {
     public AdminSettings withdrawInterestPercentage(Double interest) {
         if (!adminSettingsRepo.existsById(1)) {
             AdminSettings adminSettings = new AdminSettings();
-            adminSettings.setId(1);
             adminSettings.setWithdrawFeePercentage(interest);
             adminSettingsRepo.save(adminSettings);
             return adminSettings;
@@ -29,5 +28,12 @@ public class AdminSettingsService {
             adminSettingsRepo.save(adminSettings.get());
             return adminSettings.get();
         }
+    }
+
+    public AdminSettings withdrawLimit(Double withdrawLimit) {
+        Optional<AdminSettings> adminSettings = adminSettingsRepo.findById(1);
+        if (adminSettings.isEmpty()) throw new CustomException(ErrorMessages.WITHDRAW_FEE_ERROR);
+        adminSettings.get().setWithdrawLimit(withdrawLimit);
+        return adminSettings.get();
     }
 }

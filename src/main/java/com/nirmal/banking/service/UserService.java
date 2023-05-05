@@ -29,6 +29,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
@@ -111,7 +112,7 @@ public class UserService implements UserDetailsService {
                 .initiatedAt(System.currentTimeMillis())
                 .transactionType(TransactionType.DEPOSIT)
                 .transactionStatus(TransactionStatus.PENDING)
-                .totalAmount(totalAmount(uid) + depositAmount)
+                .totalAmount(totalAmount(uid))
                 .withdrawFee(0D)
                 .withdrawFeePercentage(0D)
                 .build();
@@ -125,8 +126,14 @@ public class UserService implements UserDetailsService {
         if (!customUserDetails.getKycStatus().equals(KycStatus.APPROVED))
             throw new CustomException(ErrorMessages.KYC_NOT_APPROVED);
 
+        if (debitedAmount > adminSettingsRepo.findById(1).get().getWithdrawLimit())
+            throw new CustomException(ErrorMessages.WITHDRAW_LIMIT_REACHED);
+
         if (debitedAmount > totalAmount(uid))
             throw new CustomException(ErrorMessages.INSUFFICIENT_BALANCE);
+
+        if (debitedAmount + withdrawLimitPerDay(uid) > adminSettingsRepo.findById(1).get().getWithdrawLimitPerDay())
+            throw new CustomException(ErrorMessages.WITHDRAW_LIMIT_PER_DAY);
 
         TransactionDetails transactionDetails = TransactionDetails.builder()
                 .uid(uid)
@@ -170,12 +177,26 @@ public class UserService implements UserDetailsService {
                     }
                     return 0.0;
                 }).reduce(0.0, Double::sum);
+    }
 
-
+    Double withdrawLimitPerDay(String uid) {
+        return transactionRepo.findAllByUidAndInitiatedAtBetweenAndTransactionStatusNot(uid
+                        , System.currentTimeMillis() - 86400000
+                        , System.currentTimeMillis()
+                        , TransactionStatus.REJECTED)
+                .stream()
+                .mapToDouble(details -> details.getTransactionType() == TransactionType.WITHDRAW ?
+                        details.getAmount() : 0)
+                .sum();
     }
 
     public Double amountBalance(String uid) {
         return totalAmount(uid);
+    }
+
+    public List<TransactionDetails> ePassbook(Long days, String uid) {
+        Long userSpecifiedDate = System.currentTimeMillis() - days * 86400000;
+        return transactionRepo.findAllByUidAndInitiatedAtGreaterThanEqual(uid, userSpecifiedDate);
     }
 
     void convertMultipartFileToFile(MultipartFile[] multipartFiles, String filePath) throws IOException {

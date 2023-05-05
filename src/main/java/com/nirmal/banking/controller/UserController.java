@@ -1,5 +1,6 @@
 package com.nirmal.banking.controller;
 
+import com.nirmal.banking.dto.EPassbook;
 import com.nirmal.banking.dto.TransactionDetailsDto;
 import com.nirmal.banking.dto.UserBankDetailsDto;
 import com.nirmal.banking.dto.UserDetailsDto;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.naming.ldap.PagedResultsControl;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.io.IOException;
@@ -48,6 +50,11 @@ public class UserController {
     @GetMapping(BALANCE)
     private ResponseEntity<?> amountBalance(HttpServletRequest request) {
         return ResponseEntity.ok(userService.amountBalance(extractUid(request)));
+    }
+
+    @GetMapping(E_PASSBOOK)
+    private ResponseEntity<?> ePassbook(@Valid @RequestBody EPassbook ePassbook, HttpServletRequest request) {
+        return ResponseEntity.ok(userService.ePassbook(ePassbook.getDays(), extractUid(request)));
     }
 
     @PostMapping(UPLOAD_IMAGES)

@@ -17,4 +17,10 @@ public class AdminSettings {
 
     @Setter
     private Double withdrawFeePercentage;
+
+    @Setter
+    private Double withdrawLimit;
+
+    @Setter
+    private Double withdrawLimitPerDay;
 }

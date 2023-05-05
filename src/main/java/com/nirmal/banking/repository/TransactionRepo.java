@@ -17,7 +17,12 @@ public interface TransactionRepo extends JpaRepository<TransactionDetails, Integ
 
     List<TransactionDetails> findAllByTransactionStatus(TransactionStatus transactionStatus);
 
-    List<TransactionDetails> findAllByUidAndTransactionStatusNot(String uid,TransactionStatus status);
+    List<TransactionDetails> findAllByUidAndTransactionStatusNot(String uid, TransactionStatus status);
 
     TransactionDetails findByTransactionId(String transactionId);
+
+    List<TransactionDetails> findAllByUidAndInitiatedAtBetweenAndTransactionStatusNot(String uid, long oneDayBefore
+            , long currentTime, TransactionStatus status);
+
+    List<TransactionDetails> findAllByUidAndInitiatedAtGreaterThanEqual(String uid, Long userSpecifiedDate);
 }
