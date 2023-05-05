@@ -11,12 +11,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.naming.ldap.PagedResultsControl;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.io.IOException;
 
-import static com.nirmal.banking.common.Const.*;
+import static com.nirmal.banking.common.Routes.*;
 
 @RestController
 @RequiredArgsConstructor

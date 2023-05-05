@@ -10,17 +10,21 @@ import com.nirmal.banking.dto.UserBankDetailsDto;
 import com.nirmal.banking.dto.UserDetailsDto;
 import com.nirmal.banking.exception.CustomException;
 import com.nirmal.banking.interceptor.JwtUtil;
-import com.nirmal.banking.recipt.WithdrawRecipt;
+import com.nirmal.banking.recipt.WithdrawReceipt;
 import com.nirmal.banking.repository.AdminSettingsRepo;
 import com.nirmal.banking.repository.TransactionRepo;
 import com.nirmal.banking.repository.UserBankDetailsRepo;
 import com.nirmal.banking.repository.UserDetailsRepo;
+import com.nirmal.banking.response.CustomResponse;
 import com.nirmal.banking.utils.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.parameters.P;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -29,13 +33,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -65,23 +65,26 @@ public class UserService implements UserDetailsService {
         return new User(details.getUid(), details.getPassword(), authorities);
     }
 
-    public UserDetailsDto addUser(UserDetailsDto userDetailsDto) {
+    public CustomResponse<UserDetailsDto> addUser(UserDetailsDto userDetailsDto) {
         if (userExist(userDetailsDto.getUsername())) {
             throw new CustomException(ErrorMessages.USERNAME_EXIST);
         }
+
         CustomUserDetails customUserDetails = new CustomUserDetails();
         BeanUtils.copyProperties(userDetailsDto, customUserDetails);
+
         customUserDetails.setUserRole(roleService.getRole(Role.USER));
         customUserDetails.setPassword(passwordEncoder.encode(userDetailsDto.getPassword()));
         customUserDetails.setUid(UUID.randomUUID().toString());
         customUserDetails.setKycStatus(KycStatus.PENDING);
         customUserDetails.setInitiatedAt(System.currentTimeMillis());
         userDetailsRepo.save(customUserDetails);
+
         BeanUtils.copyProperties(customUserDetails, userDetailsDto);
-        return userDetailsDto;
+        return new CustomResponse<>(HttpStatus.OK, CustomStatus.SUCCESS, userDetailsDto);
     }
 
-    public String uploadImage(MultipartFile[] file, String uid) throws IOException {
+    public CustomResponse<String> uploadImage(MultipartFile[] file, String uid) throws IOException {
         String filePath = fileStoragePath + File.separator + uid;
         File folder = new File(filePath);
         folder.mkdir();
@@ -91,10 +94,10 @@ public class UserService implements UserDetailsService {
         CustomUserDetails customUserDetails = userDetailsRepo.findByUid(uid);
         customUserDetails.setKycStatus(KycStatus.PENDING);
         userDetailsRepo.save(customUserDetails);
-        return SuccessMessages.UPLOADED;
+        return new CustomResponse<>(HttpStatus.OK, CustomStatus.SUCCESS, SuccessMessages.UPLOADED);
     }
 
-    public String depositAmount(String uid, Double depositAmount) {
+    public CustomResponse<String> depositAmount(String uid, Double depositAmount) {
         CustomUserDetails customUserDetails = userDetailsRepo.findByUid(uid);
 
         //Verifying the user is approved by The Admin.
@@ -117,10 +120,10 @@ public class UserService implements UserDetailsService {
                 .withdrawFeePercentage(0D)
                 .build();
         transactionRepo.save(transactionDetails);
-        return depositAmount + SuccessMessages.AMOUNT_CREDITED;
+        return new CustomResponse<>(HttpStatus.OK, CustomStatus.SUCCESS, depositAmount + SuccessMessages.AMOUNT_CREDITED);
     }
 
-    public WithdrawRecipt withdrawAmount(String uid, Double debitedAmount) {
+    public CustomResponse<WithdrawReceipt> withdrawAmount(String uid, Double debitedAmount) {
         CustomUserDetails customUserDetails = userDetailsRepo.findByUid(uid);
 
         if (!customUserDetails.getKycStatus().equals(KycStatus.APPROVED))
@@ -147,7 +150,9 @@ public class UserService implements UserDetailsService {
                 .withdrawFeePercentage(withdrawFeePercentage())
                 .build();
         transactionRepo.save(transactionDetails);
-        return new WithdrawRecipt(debitedAmount - withdrawFeeAmount(debitedAmount), withdrawFeePercentage(), +withdrawFeeAmount(debitedAmount));
+        return new CustomResponse<>(HttpStatus.OK, CustomStatus.SUCCESS, new WithdrawReceipt(
+                debitedAmount - withdrawFeeAmount(debitedAmount), withdrawFeePercentage()
+                , +withdrawFeeAmount(debitedAmount)));
     }
 
 
@@ -194,9 +199,19 @@ public class UserService implements UserDetailsService {
         return totalAmount(uid);
     }
 
-    public List<TransactionDetails> ePassbook(Long days, String uid) {
+    public CustomResponse<Map<String, Object>> ePassbook(Long days, String uid) {
         Long userSpecifiedDate = System.currentTimeMillis() - days * 86400000;
-        return transactionRepo.findAllByUidAndInitiatedAtGreaterThanEqual(uid, userSpecifiedDate);
+        List<TransactionDetails> transactionDetailsList;
+        Pageable paging = PageRequest.of(0, 3);
+        Page<TransactionDetails> transactionDetailsPage = transactionRepo.findAllByUidAndInitiatedAtGreaterThanEqual(uid, userSpecifiedDate, paging);
+        transactionDetailsList = transactionDetailsPage.getContent();
+        Map<String, Object> response = new HashMap<>();
+        response.put("TransactionDetailsList", transactionDetailsList);
+        response.put("currentPage", transactionDetailsPage.getNumber());
+        response.put("totalItems", transactionDetailsPage.getTotalElements());
+        response.put("totalPages", transactionDetailsPage.getTotalPages());
+
+        return new CustomResponse<>(HttpStatus.OK, CustomStatus.SUCCESS, response);
     }
 
     void convertMultipartFileToFile(MultipartFile[] multipartFiles, String filePath) throws IOException {

@@ -3,6 +3,8 @@ package com.nirmal.banking.repository;
 import com.nirmal.banking.dao.TransactionDetails;
 import com.nirmal.banking.utils.TransactionStatus;
 import com.nirmal.banking.utils.TransactionType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,5 +26,5 @@ public interface TransactionRepo extends JpaRepository<TransactionDetails, Integ
     List<TransactionDetails> findAllByUidAndInitiatedAtBetweenAndTransactionStatusNot(String uid, long oneDayBefore
             , long currentTime, TransactionStatus status);
 
-    List<TransactionDetails> findAllByUidAndInitiatedAtGreaterThanEqual(String uid, Long userSpecifiedDate);
+    Page<TransactionDetails> findAllByUidAndInitiatedAtGreaterThanEqual(String uid, Long userSpecifiedDate, Pageable pageable);
 }

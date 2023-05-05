@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 
-import static com.nirmal.banking.common.Const.*;
+import static com.nirmal.banking.common.Routes.*;
 
 @RestController
 @RequiredArgsConstructor

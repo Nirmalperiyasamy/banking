@@ -7,12 +7,11 @@ import com.nirmal.banking.dto.UserDetailsDto;
 import com.nirmal.banking.exception.CustomException;
 import com.nirmal.banking.repository.TransactionRepo;
 import com.nirmal.banking.repository.UserDetailsRepo;
-import com.nirmal.banking.utils.KycStatus;
-import com.nirmal.banking.utils.Role;
-import com.nirmal.banking.utils.TransactionStatus;
-import com.nirmal.banking.utils.TransactionType;
+import com.nirmal.banking.response.CustomResponse;
+import com.nirmal.banking.utils.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -31,28 +30,28 @@ public class AdminService {
     private final RoleService roleService;
 
 
-    public CustomUserDetails addManager(UserDetailsDto userDetailsDto) {
+    public CustomResponse<CustomUserDetails> addManager(UserDetailsDto userDetailsDto) {
         CustomUserDetails customUserDetails = new CustomUserDetails();
         BeanUtils.copyProperties(userDetailsDto, customUserDetails);
         customUserDetails.setPassword(passwordEncoder.encode(userDetailsDto.getPassword()));
         customUserDetails.setUserRole(roleService.getRole(Role.MANAGER));
         userDetailsRepo.save(customUserDetails);
-        return customUserDetails;
+        return new CustomResponse<>(HttpStatus.OK, CustomStatus.SUCCESS, customUserDetails);
     }
 
-    public String approvedRejected(String uid, KycStatus kycStatus) {
+    public CustomResponse<String> approvedRejected(String uid, KycStatus kycStatus) {
         CustomUserDetails customUserDetails = userDetailsRepo.findByUid(uid);
 
         switch (kycStatus) {
             case APPROVED:
                 customUserDetails.setKycStatus(KycStatus.APPROVED);
                 userDetailsRepo.save(customUserDetails);
-                return "User " + KycStatus.APPROVED;
+                return new CustomResponse<>(HttpStatus.OK, CustomStatus.SUCCESS, "User " + KycStatus.APPROVED);
 
             case REJECTED:
                 customUserDetails.setKycStatus(KycStatus.REJECTED);
                 userDetailsRepo.save(customUserDetails);
-                return "User " + KycStatus.REJECTED;
+                return new CustomResponse<>(HttpStatus.OK, CustomStatus.SUCCESS, "User " + KycStatus.REJECTED);
 
             default:
                 throw new CustomException(ErrorMessages.STATUS_ERROR);
@@ -60,27 +59,27 @@ public class AdminService {
 
     }
 
-    public List<CustomUserDetails> pendingKyc() {
-        return userDetailsRepo.findAllByKycStatus(KycStatus.PENDING);
+    public CustomResponse<List<CustomUserDetails>> pendingKyc() {
+        return new CustomResponse<>(HttpStatus.OK, CustomStatus.SUCCESS, userDetailsRepo.findAllByKycStatus(KycStatus.PENDING));
     }
 
-    public List<TransactionDetails> transactionPending() {
-        return transactionRepo.findAllByTransactionStatus(TransactionStatus.PENDING);
+    public CustomResponse<List<TransactionDetails>> transactionPending() {
+        return new CustomResponse<>(HttpStatus.OK, CustomStatus.SUCCESS, transactionRepo.findAllByTransactionStatus(TransactionStatus.PENDING));
     }
 
-    public String depositApprove(String transactionId, TransactionStatus transactionStatus) {
+    public CustomResponse<String> depositApprove(String transactionId, TransactionStatus transactionStatus) {
         TransactionDetails transactionDetails = transactionRepo.findByTransactionId(transactionId);
         switch (transactionStatus) {
             case APPROVED:
                 transactionDetails.setTransactionStatus(TransactionStatus.APPROVED);
                 transactionDetails.setTotalAmount(totalAmount(transactionDetails.getUid()));
                 transactionRepo.save(transactionDetails);
-                return "User Amount => " + TransactionType.DEPOSIT;
+                return new CustomResponse<>(HttpStatus.OK, CustomStatus.SUCCESS, "User Amount => " + TransactionType.DEPOSIT);
 
             case REJECTED:
                 transactionDetails.setTransactionStatus(TransactionStatus.REJECTED);
                 transactionRepo.save(transactionDetails);
-                return "User Amount => " + TransactionStatus.REJECTED;
+                return new CustomResponse<>(HttpStatus.OK, CustomStatus.SUCCESS, "User Amount => " + TransactionStatus.REJECTED);
 
             default:
                 throw new CustomException(ErrorMessages.STATUS_ERROR);
@@ -100,18 +99,19 @@ public class AdminService {
                 }).reduce(0.0, Double::sum);
     }
 
-    public String withdrawApprove(String transactionId, TransactionStatus kycStatus) {
+    public CustomResponse<String> withdrawApprove(String transactionId, TransactionStatus kycStatus) {
         TransactionDetails transactionDetails = transactionRepo.findByTransactionId(transactionId);
         switch (kycStatus) {
             case APPROVED:
                 transactionDetails.setTransactionStatus(TransactionStatus.APPROVED);
                 transactionRepo.save(transactionDetails);
-                return "User Amount =>" + TransactionType.WITHDRAW;
+                return new CustomResponse<>(HttpStatus.OK, CustomStatus.SUCCESS, "User Amount =>" + TransactionStatus.APPROVED);
 
             case REJECTED:
                 transactionDetails.setTransactionStatus(TransactionStatus.REJECTED);
                 transactionRepo.save(transactionDetails);
-                return "User Amount =>" + TransactionStatus.REJECTED;
+                return new CustomResponse<>(HttpStatus.OK, CustomStatus.SUCCESS, "User Amount =>" + TransactionStatus.REJECTED);
+
 
             default:
                 throw new CustomException(ErrorMessages.STATUS_ERROR);

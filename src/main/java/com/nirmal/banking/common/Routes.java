@@ -1,6 +1,6 @@
 package com.nirmal.banking.common;
 
-public class Const {
+public class Routes {
 
     public static final String ADMIN = "/api/admin";
 
