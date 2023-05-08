@@ -1,6 +1,6 @@
 package com.nirmal.banking.common;
 
-public class Const {
+public class Routes {
 
     public static final String ADMIN = "/api/admin";
 
@@ -39,5 +39,9 @@ public class Const {
     public static final String WITHDRAW_DECISION = "/withdraw-decision";
 
     public static final String WITHDRAW_FEE_PERCENTAGE = "/withdraw-fee-percentage";
+
+    public static final String WITHDRAW_LIMIT = "/withdraw-limit";
+
+    public static final String E_PASSBOOK = "/e-passbook";
 
 }

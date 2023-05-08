@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class WithdrawRecipt {
+public class WithdrawReceipt {
 
     private double amountDebited;
 
@@ -13,7 +13,7 @@ public class WithdrawRecipt {
 
     private double feeAmount;
 
-    public WithdrawRecipt(double amountDebited, double feePercentage, double feeAmount) {
+    public WithdrawReceipt(double amountDebited, double feePercentage, double feeAmount) {
         this.amountDebited = amountDebited;
         this.feePercentage = feePercentage;
         this.feeAmount = feeAmount;

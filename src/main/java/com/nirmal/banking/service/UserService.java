@@ -2,16 +2,14 @@ package com.nirmal.banking.service;
 
 import com.nirmal.banking.common.ErrorMessages;
 import com.nirmal.banking.common.SuccessMessages;
-import com.nirmal.banking.dao.AdminSettings;
 import com.nirmal.banking.dao.CustomUserDetails;
 import com.nirmal.banking.dao.TransactionDetails;
 import com.nirmal.banking.dao.UserBankDetails;
 import com.nirmal.banking.dto.UserBankDetailsDto;
 import com.nirmal.banking.dto.UserDetailsDto;
 import com.nirmal.banking.exception.CustomException;
-import com.nirmal.banking.interceptor.JwtUtil;
-import com.nirmal.banking.recipt.WithdrawRecipt;
-import com.nirmal.banking.repository.AdminSettingsRepo;
+import com.nirmal.banking.pojo.PaginationDetails;
+import com.nirmal.banking.recipt.WithdrawReceipt;
 import com.nirmal.banking.repository.TransactionRepo;
 import com.nirmal.banking.repository.UserBankDetailsRepo;
 import com.nirmal.banking.repository.UserDetailsRepo;
@@ -19,8 +17,10 @@ import com.nirmal.banking.utils.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.parameters.P;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -29,11 +29,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -46,11 +45,9 @@ public class UserService implements UserDetailsService {
 
     private final UserBankDetailsRepo userBankDetailsRepo;
 
-    private final AdminSettingsRepo adminSettingsRepo;
-
     private final PasswordEncoder passwordEncoder;
 
-    private final JwtUtil jwtUtil;
+    private final AdminSettingsService adminSettingsService;
 
     private final RoleService roleService;
 
@@ -68,29 +65,19 @@ public class UserService implements UserDetailsService {
         if (userExist(userDetailsDto.getUsername())) {
             throw new CustomException(ErrorMessages.USERNAME_EXIST);
         }
+
         CustomUserDetails customUserDetails = new CustomUserDetails();
         BeanUtils.copyProperties(userDetailsDto, customUserDetails);
+
         customUserDetails.setUserRole(roleService.getRole(Role.USER));
         customUserDetails.setPassword(passwordEncoder.encode(userDetailsDto.getPassword()));
         customUserDetails.setUid(UUID.randomUUID().toString());
         customUserDetails.setKycStatus(KycStatus.PENDING);
         customUserDetails.setInitiatedAt(System.currentTimeMillis());
         userDetailsRepo.save(customUserDetails);
+
         BeanUtils.copyProperties(customUserDetails, userDetailsDto);
         return userDetailsDto;
-    }
-
-    public String uploadImage(MultipartFile[] file, String uid) throws IOException {
-        String filePath = fileStoragePath + File.separator + uid;
-        File folder = new File(filePath);
-        folder.mkdir();
-
-        convertMultipartFileToFile(file, filePath);
-
-        CustomUserDetails customUserDetails = userDetailsRepo.findByUid(uid);
-        customUserDetails.setKycStatus(KycStatus.PENDING);
-        userDetailsRepo.save(customUserDetails);
-        return SuccessMessages.UPLOADED;
     }
 
     public String depositAmount(String uid, Double depositAmount) {
@@ -111,7 +98,7 @@ public class UserService implements UserDetailsService {
                 .initiatedAt(System.currentTimeMillis())
                 .transactionType(TransactionType.DEPOSIT)
                 .transactionStatus(TransactionStatus.PENDING)
-                .totalAmount(totalAmount(uid) + depositAmount)
+                .totalAmount(totalAmount(uid))
                 .withdrawFee(0D)
                 .withdrawFeePercentage(0D)
                 .build();
@@ -119,14 +106,20 @@ public class UserService implements UserDetailsService {
         return depositAmount + SuccessMessages.AMOUNT_CREDITED;
     }
 
-    public WithdrawRecipt withdrawAmount(String uid, Double debitedAmount) {
+    public WithdrawReceipt withdrawAmount(String uid, Double debitedAmount) {
         CustomUserDetails customUserDetails = userDetailsRepo.findByUid(uid);
 
         if (!customUserDetails.getKycStatus().equals(KycStatus.APPROVED))
             throw new CustomException(ErrorMessages.KYC_NOT_APPROVED);
 
+        if (debitedAmount > adminSettingsService.adminSettingsDetails().getWithdrawLimit())
+            throw new CustomException(ErrorMessages.WITHDRAW_LIMIT_REACHED);
+
         if (debitedAmount > totalAmount(uid))
             throw new CustomException(ErrorMessages.INSUFFICIENT_BALANCE);
+
+        if (debitedAmount + withdrawLimitPerDay(uid) > adminSettingsService.adminSettingsDetails().getWithdrawLimitPerDay())
+            throw new CustomException(ErrorMessages.WITHDRAW_LIMIT_PER_DAY);
 
         TransactionDetails transactionDetails = TransactionDetails.builder()
                 .uid(uid)
@@ -140,14 +133,14 @@ public class UserService implements UserDetailsService {
                 .withdrawFeePercentage(withdrawFeePercentage())
                 .build();
         transactionRepo.save(transactionDetails);
-        return new WithdrawRecipt(debitedAmount - withdrawFeeAmount(debitedAmount), withdrawFeePercentage(), +withdrawFeeAmount(debitedAmount));
+        return new WithdrawReceipt(
+                debitedAmount - withdrawFeeAmount(debitedAmount),
+                withdrawFeePercentage(),
+                +withdrawFeeAmount(debitedAmount));
     }
 
-
     private Double withdrawFeePercentage() {
-        Optional<AdminSettings> adminService = adminSettingsRepo.findById(1);
-        if (adminService.isEmpty()) throw new CustomException(ErrorMessages.WITHDRAW_FEE_ERROR);
-        return adminService.get().getWithdrawFeePercentage();
+        return adminSettingsService.adminSettingsDetails().getWithdrawFeePercentage();
     }
 
     private Double withdrawFeeAmount(Double debitedAmount) {
@@ -170,12 +163,48 @@ public class UserService implements UserDetailsService {
                     }
                     return 0.0;
                 }).reduce(0.0, Double::sum);
+    }
 
-
+    Double withdrawLimitPerDay(String uid) {
+        Long oneDay = 86400000L;
+        return transactionRepo.findAllByUidAndInitiatedAtBetweenAndTransactionStatusNot(uid,
+                        System.currentTimeMillis() - oneDay, System.currentTimeMillis(),
+                        TransactionStatus.REJECTED)
+                .stream()
+                .mapToDouble(details -> details.getTransactionType() == TransactionType.WITHDRAW ?
+                        details.getAmount() : 0)
+                .sum();
     }
 
     public Double amountBalance(String uid) {
         return totalAmount(uid);
+    }
+
+    public PaginationDetails ePassbook(Date dateFrom, Date dateTo, Integer pageSize, Integer pageNo, String uid) {
+        List<TransactionDetails> transactionDetailsList;
+        Pageable paging = PageRequest.of(pageNo, pageSize);
+        Page<TransactionDetails> transactionDetailsPage = transactionRepo.findAllByUidAndInitiatedAtBetween(uid,
+                dateFrom.getTime(),
+                dateTo.getTime(),
+                paging);
+        transactionDetailsList = transactionDetailsPage.getContent();
+
+        return new PaginationDetails(transactionDetailsList, transactionDetailsPage.getNumber(),
+                transactionDetailsPage.getTotalElements(),
+                transactionDetailsPage.getTotalPages());
+    }
+
+    public String uploadImage(MultipartFile[] file, String uid) throws IOException {
+        String filePath = fileStoragePath + File.separator + uid;
+        File folder = new File(filePath);
+        folder.mkdir();
+
+        convertMultipartFileToFile(file, filePath);
+
+        CustomUserDetails customUserDetails = userDetailsRepo.findByUid(uid);
+        customUserDetails.setKycStatus(KycStatus.PENDING);
+        userDetailsRepo.save(customUserDetails);
+        return SuccessMessages.UPLOADED;
     }
 
     void convertMultipartFileToFile(MultipartFile[] multipartFiles, String filePath) throws IOException {

@@ -6,12 +6,12 @@ import com.nirmal.banking.dto.UserDetailsDto;
 import com.nirmal.banking.service.AdminService;
 import com.nirmal.banking.service.AdminSettingsService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import com.nirmal.banking.response.CustomResponse;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 
-import static com.nirmal.banking.common.Const.*;
+import static com.nirmal.banking.common.Routes.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -23,39 +23,44 @@ public class AdminController {
     private final AdminSettingsService adminSettingsService;
 
     @PostMapping(ADD_MANAGER)
-    private ResponseEntity<?> addManager(@Valid @RequestBody UserDetailsDto userDetailsDto) {
-        return ResponseEntity.ok(adminService.addManager(userDetailsDto));
+    private CustomResponse<?> addManager(@Valid @RequestBody UserDetailsDto userDetailsDto) {
+        return CustomResponse.success(adminService.addManager(userDetailsDto));
     }
 
     @GetMapping(PENDING_KYC)
-    private ResponseEntity<?> pendingKyc() {
-        return ResponseEntity.ok(adminService.pendingKyc());
+    private CustomResponse<?> pendingKyc() {
+        return CustomResponse.success(adminService.pendingKyc());
     }
 
     @GetMapping(TRANSACTION_PENDING)
-    private ResponseEntity<?> depositPending() {
-        return ResponseEntity.ok(adminService.transactionPending());
+    private CustomResponse<?> depositPending() {
+        return CustomResponse.success(adminService.transactionPending());
     }
 
     @PutMapping(DEPOSIT_DECISION)
-    private ResponseEntity<?> depositApprove(@RequestBody TransactionDecisionByAdmin transactionDecisionByAdmin) {
-        return ResponseEntity.ok(adminService.depositApprove(transactionDecisionByAdmin.getTransactionId(),
+    private CustomResponse<?> depositApprove(@RequestBody TransactionDecisionByAdmin transactionDecisionByAdmin) {
+        return CustomResponse.success(adminService.depositApprove(transactionDecisionByAdmin.getTransactionId(),
                 transactionDecisionByAdmin.getDecision()));
     }
 
     @PutMapping(WITHDRAW_DECISION)
-    private ResponseEntity<?> withdrawApprove(@RequestBody TransactionDecisionByAdmin transactionDecisionByAdmin) {
-        return ResponseEntity.ok(adminService.withdrawApprove(transactionDecisionByAdmin.getTransactionId(),
+    private CustomResponse<?> withdrawApprove(@RequestBody TransactionDecisionByAdmin transactionDecisionByAdmin) {
+        return CustomResponse.success(adminService.withdrawApprove(transactionDecisionByAdmin.getTransactionId(),
                 transactionDecisionByAdmin.getDecision()));
     }
 
     @PutMapping(VALIDATE_KYC)
-    private ResponseEntity<?> approved(@RequestBody KycStatusApprovalByAdmin kycStatusApprovalByAdmin) {
-        return ResponseEntity.ok(adminService.approvedRejected(kycStatusApprovalByAdmin.getUid(), kycStatusApprovalByAdmin.getStatus()));
+    private CustomResponse<?> approved(@RequestBody KycStatusApprovalByAdmin kycStatusApprovalByAdmin) {
+        return CustomResponse.success(adminService.approvedRejected(kycStatusApprovalByAdmin.getUid(), kycStatusApprovalByAdmin.getStatus()));
     }
 
     @PostMapping(WITHDRAW_FEE_PERCENTAGE)
-    private ResponseEntity<?> withdrawInterestPercentage(@RequestBody String interest) {
-        return ResponseEntity.ok(adminSettingsService.withdrawInterestPercentage(Double.parseDouble(interest)));
+    private CustomResponse<?> withdrawInterestPercentage(@RequestBody String interest) {
+        return CustomResponse.success(adminSettingsService.withdrawInterestPercentage(Double.parseDouble(interest)));
+    }
+
+    @PutMapping(WITHDRAW_LIMIT)
+    private CustomResponse<?> withdrawLimit(@RequestBody String limit) {
+        return CustomResponse.success(adminSettingsService.withdrawLimit(Double.valueOf(limit)));
     }
 }

@@ -24,5 +24,8 @@ public class ErrorMessages {
     public static final String BANK_ACCOUNT_NUMBER = "Enter valid account number";
     public static final String IFSC_CODE = "Enter valid IFSC code";
     public static final String WITHDRAW_FEE_ERROR = "Error in withdraw fee percentage";
+    public static final String WITHDRAW_LIMIT_REACHED = "Maximum withdraw limit reached";
+    public static final String WITHDRAW_LIMIT_PER_DAY = "You have reached your daily transaction limit";
+    public static final String E_PASSBOOK_DATE = "You can get only last 10 days transaction details";
 
 }

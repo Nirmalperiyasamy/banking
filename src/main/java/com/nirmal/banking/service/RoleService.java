@@ -14,20 +14,7 @@ public class RoleService {
 
     private final RoleRepo roleRepo;
 
-    public UserRole getRole(Role manager) {
-
-        switch (manager) {
-            case ADMIN:
-                return roleRepo.findById(1).get();
-
-            case MANAGER:
-                return roleRepo.findById(2).get();
-
-            case USER:
-                return roleRepo.findById(3).get();
-
-            default:
-                throw new CustomException(ErrorMessages.ROLE_NOT_FOUND);
-        }
+    public UserRole getRole(Role role) {
+        return roleRepo.findByRole(role).orElseThrow(() -> new CustomException(ErrorMessages.ROLE_NOT_FOUND));
     }
 }

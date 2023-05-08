@@ -1,14 +1,18 @@
 package com.nirmal.banking.controller;
 
+import com.nirmal.banking.dao.CustomUserDetails;
+import com.nirmal.banking.response.CustomResponse;
 import com.nirmal.banking.service.ManagerService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import static com.nirmal.banking.common.Const.ALL_USER;
-import static com.nirmal.banking.common.Const.MANAGER;
+import java.util.List;
+
+import static com.nirmal.banking.common.Routes.ALL_USER;
+import static com.nirmal.banking.common.Routes.MANAGER;
+import static com.nirmal.banking.response.CustomResponse.success;
 
 @RestController
 @RequiredArgsConstructor
@@ -18,7 +22,7 @@ public class ManagerController {
     private final ManagerService managerService;
 
     @GetMapping(ALL_USER)
-    public ResponseEntity<?> allUser() {
-        return ResponseEntity.ok(managerService.allUser());
+    public CustomResponse<List<CustomUserDetails>> allUser() {
+        return success(managerService.allUser());
     }
 }
