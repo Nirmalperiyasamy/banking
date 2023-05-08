@@ -1,6 +1,5 @@
 package com.nirmal.banking.controller;
 
-import com.nirmal.banking.dto.EPassbook;
 import com.nirmal.banking.dto.TransactionDetailsDto;
 import com.nirmal.banking.dto.UserBankDetailsDto;
 import com.nirmal.banking.dto.UserDetailsDto;
@@ -8,13 +7,14 @@ import com.nirmal.banking.interceptor.JwtUtil;
 import com.nirmal.banking.response.CustomResponse;
 import com.nirmal.banking.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.io.IOException;
+import java.util.Date;
 
 import static com.nirmal.banking.common.Routes.*;
 
@@ -53,8 +53,12 @@ public class UserController {
     }
 
     @GetMapping(E_PASSBOOK)
-    private CustomResponse<?> ePassbook(@Valid @RequestBody EPassbook ePassbook, HttpServletRequest request) {
-        return CustomResponse.success(userService.ePassbook(ePassbook, extractUid(request)));
+    private CustomResponse<?> ePassbook(@RequestParam("dateFrom") @DateTimeFormat(pattern = "yyyy-MM-dd") Date dateFrom,
+                                        @RequestParam("dateTo") @DateTimeFormat(pattern = "yyyy-MM-dd") Date dateTo,
+                                        @RequestParam(value = "pageSize", defaultValue = "3") int pageSize,
+                                        @RequestParam(value = "pageNum", defaultValue = "1") int pageNum,
+                                        HttpServletRequest request) {
+        return CustomResponse.success(userService.ePassbook(dateFrom, dateTo, pageSize, pageNum, extractUid(request)));
     }
 
     @PostMapping(UPLOAD_IMAGES)

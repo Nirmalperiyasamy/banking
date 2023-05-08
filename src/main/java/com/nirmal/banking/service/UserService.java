@@ -5,13 +5,11 @@ import com.nirmal.banking.common.SuccessMessages;
 import com.nirmal.banking.dao.CustomUserDetails;
 import com.nirmal.banking.dao.TransactionDetails;
 import com.nirmal.banking.dao.UserBankDetails;
-import com.nirmal.banking.dto.EPassbook;
 import com.nirmal.banking.dto.UserBankDetailsDto;
 import com.nirmal.banking.dto.UserDetailsDto;
 import com.nirmal.banking.exception.CustomException;
 import com.nirmal.banking.pojo.PaginationDetails;
 import com.nirmal.banking.recipt.WithdrawReceipt;
-import com.nirmal.banking.repository.AdminSettingsRepo;
 import com.nirmal.banking.repository.TransactionRepo;
 import com.nirmal.banking.repository.UserBankDetailsRepo;
 import com.nirmal.banking.repository.UserDetailsRepo;
@@ -33,6 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -45,8 +44,6 @@ public class UserService implements UserDetailsService {
     private final TransactionRepo transactionRepo;
 
     private final UserBankDetailsRepo userBankDetailsRepo;
-
-    private final AdminSettingsRepo adminSettingsRepo;
 
     private final PasswordEncoder passwordEncoder;
 
@@ -195,11 +192,11 @@ public class UserService implements UserDetailsService {
         return totalAmount(uid);
     }
 
-    public PaginationDetails ePassbook(EPassbook ePassbook, String uid) {
+    public PaginationDetails ePassbook(Date dateFrom, Date dateTo, Integer pageSize, Integer pageNo, String uid) {
         List<TransactionDetails> transactionDetailsList;
-        Pageable paging = PageRequest.of(ePassbook.getPageNo(), ePassbook.getSize());
-        Page<TransactionDetails> transactionDetailsPage = transactionRepo.findAllByUidAndInitiatedAtBetween(uid, ePassbook.getDateFrom().getTime(),
-                ePassbook.getDateTo().getTime(), paging);
+        Pageable paging = PageRequest.of(pageNo, pageSize);
+        Page<TransactionDetails> transactionDetailsPage = transactionRepo.findAllByUidAndInitiatedAtBetween(uid, dateFrom.getTime(),
+                dateTo.getTime(), paging);
         transactionDetailsList = transactionDetailsPage.getContent();
 
         return new PaginationDetails(transactionDetailsList, transactionDetailsPage.getNumber(),
