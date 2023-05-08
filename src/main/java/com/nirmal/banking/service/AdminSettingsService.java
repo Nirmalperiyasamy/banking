@@ -31,15 +31,14 @@ public class AdminSettingsService {
     }
 
     public AdminSettings withdrawLimit(Double withdrawLimit) {
-        Optional<AdminSettings> adminSettings = adminSettingsRepo.findById(1);
-        if (adminSettings.isEmpty()) throw new CustomException(ErrorMessages.WITHDRAW_FEE_ERROR);
-        adminSettings.get().setWithdrawLimit(withdrawLimit);
-        return adminSettings.get();
+        AdminSettings adminSettings = adminSettingsRepo.findById(1).orElseThrow(
+                () -> new CustomException(ErrorMessages.WITHDRAW_FEE_ERROR));
+        adminSettings.setWithdrawLimit(withdrawLimit);
+        adminSettingsRepo.save(adminSettings);
+        return adminSettings;
     }
 
     public AdminSettings adminSettingsDetails() {
-        Optional<AdminSettings> adminSettings = adminSettingsRepo.findById(1);
-        if (adminSettings.isEmpty()) throw new CustomException(ErrorMessages.WITHDRAW_FEE_ERROR);
-        return adminSettings.get();
+        return adminSettingsRepo.findById(1).orElseThrow(() -> new CustomException(ErrorMessages.WITHDRAW_FEE_ERROR));
     }
 }

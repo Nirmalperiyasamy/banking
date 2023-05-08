@@ -80,19 +80,6 @@ public class UserService implements UserDetailsService {
         return userDetailsDto;
     }
 
-    public String uploadImage(MultipartFile[] file, String uid) throws IOException {
-        String filePath = fileStoragePath + File.separator + uid;
-        File folder = new File(filePath);
-        folder.mkdir();
-
-        convertMultipartFileToFile(file, filePath);
-
-        CustomUserDetails customUserDetails = userDetailsRepo.findByUid(uid);
-        customUserDetails.setKycStatus(KycStatus.PENDING);
-        userDetailsRepo.save(customUserDetails);
-        return SuccessMessages.UPLOADED;
-    }
-
     public String depositAmount(String uid, Double depositAmount) {
         CustomUserDetails customUserDetails = userDetailsRepo.findByUid(uid);
 
@@ -179,8 +166,9 @@ public class UserService implements UserDetailsService {
     }
 
     Double withdrawLimitPerDay(String uid) {
+        Long oneDay = 86400000L;
         return transactionRepo.findAllByUidAndInitiatedAtBetweenAndTransactionStatusNot(uid,
-                        System.currentTimeMillis() - 86400000, System.currentTimeMillis(),
+                        System.currentTimeMillis() - oneDay, System.currentTimeMillis(),
                         TransactionStatus.REJECTED)
                 .stream()
                 .mapToDouble(details -> details.getTransactionType() == TransactionType.WITHDRAW ?
@@ -195,13 +183,28 @@ public class UserService implements UserDetailsService {
     public PaginationDetails ePassbook(Date dateFrom, Date dateTo, Integer pageSize, Integer pageNo, String uid) {
         List<TransactionDetails> transactionDetailsList;
         Pageable paging = PageRequest.of(pageNo, pageSize);
-        Page<TransactionDetails> transactionDetailsPage = transactionRepo.findAllByUidAndInitiatedAtBetween(uid, dateFrom.getTime(),
-                dateTo.getTime(), paging);
+        Page<TransactionDetails> transactionDetailsPage = transactionRepo.findAllByUidAndInitiatedAtBetween(uid,
+                dateFrom.getTime(),
+                dateTo.getTime(),
+                paging);
         transactionDetailsList = transactionDetailsPage.getContent();
 
         return new PaginationDetails(transactionDetailsList, transactionDetailsPage.getNumber(),
                 transactionDetailsPage.getTotalElements(),
                 transactionDetailsPage.getTotalPages());
+    }
+
+    public String uploadImage(MultipartFile[] file, String uid) throws IOException {
+        String filePath = fileStoragePath + File.separator + uid;
+        File folder = new File(filePath);
+        folder.mkdir();
+
+        convertMultipartFileToFile(file, filePath);
+
+        CustomUserDetails customUserDetails = userDetailsRepo.findByUid(uid);
+        customUserDetails.setKycStatus(KycStatus.PENDING);
+        userDetailsRepo.save(customUserDetails);
+        return SuccessMessages.UPLOADED;
     }
 
     void convertMultipartFileToFile(MultipartFile[] multipartFiles, String filePath) throws IOException {
